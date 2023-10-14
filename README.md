@@ -41,23 +41,20 @@ On Bluestacks, you would go to `Settings` -> `Advanced` -> `Enable ADB`
 With an Android device, you're likely going to use `scrcpy`. Head over there for the [instructions](https://github.com/Genymobile/scrcpy#prerequisites).
 
 
-## Basic Usage
-1. Set up your settings.toml and devices. [link](docs/settings_device_configs.md)
+## Usage
+1. Set up your settings.txt and devices. [link](docs/settings_device_configs.md)
 2. Record a macro. [link](docs/macro_recording.md)
 3. Run the macro.
 ```
 python -m tools.runner [config name] [device name] --ui
 ```
-This runs the macro with default settings a user interface with live screenshots and logging. You can disable the user interface by leaving out `--ui`.
+This runs the macro with default settings a user interface with live screenshots and logging.
 
+If you run into issues, check out [debugging](docs/debugging.md)
 
-# Advanced Usage
-See [advanced usage](docs/advanced_usage.md)
+For advanced behaviors like branching, check out [advanced usage](docs/advanced_usage.md)
 
-# Debugging
-See [debugging](docs/debugging.md)
-
-# Future Work
+## Future Work
 
 * Add a scheduler to run macros on a user-defined schedule.
 * Add a graph visualizer for the flow of a FlashbackMacro.
@@ -65,7 +62,17 @@ See [debugging](docs/debugging.md)
 * Add an HTTP server so that FlashbackMacros can interface with non-Python applications.
 * Add support for right clicks and keyboard actions on Windows applications.
 
-# Errata
+## Errata
 
 Test are standard pytest fare.
-`pytest .\tests`
+Run them with `pytest .\tests`.
+
+## Related/Thanks
+
+This project leverages several libraries for the Android side of things.
+
+[https://github.com/leng-yue/py-scrcpy-client](https://github.com/leng-yue/py-scrcpy-client)
+
+[https://github.com/Genymobile/scrcpy](https://github.com/Genymobile/scrcpy)
+
+[https://github.com/openatx/adbutils](https://github.com/openatx/adbutils)
