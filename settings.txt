@@ -1,0 +1,26 @@
+title = "General Settings"
+
+[fbmr]
+# executor.execute_chain: how long do we wait before we consider retrying an action? in seconds.
+action_retry_duration = 4
+
+
+[MacroRecorder]
+# the size of the image recorded for each click. in pixels.
+click_image_size = [50, 50]
+
+
+[ScrcpyDevice]
+# capture settings
+# - 10 fps is sufficient for most automation.
+# - reducing resolution and bitrate will make things faster, but also noisier.
+capture_fps = 10
+capture_bitrate = 4000000
+
+
+[DebugSettings]
+# files in /debug older than this will be deleted on the next launch.
+# can be specified as "XX hours", or "XX days".
+debug_image_expire_time = "7 days"
+# files in /logs older than this will be deleted on the next launch.
+debug_log_expire_time = "7 days"
