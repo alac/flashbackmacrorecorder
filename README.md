@@ -1,10 +1,10 @@
-# FlashbackMacros
+# FlashbackMacroRecorder
 
-FlashbackMacros is a tool that allows you to record and playback macros on Windows applications. It uses image data and basic computer vision to recover in scenarios with variable lag and to add branching behaviors to macros.
+FlashbackMacroRecorder is a tool that allows you to record and playback macros on Windows applications. It uses image data and basic computer vision to recover in scenarios with variable lag and to add branching behaviors to macros.
 
 This is particularly useful for Android applications being run through Windows.
 
-FBMS can be used for:
+FBMR can be used for:
 * Automating repetitive tasks, like QA workflows.
 * Building apps that perform complex UI interactions, e.g. a bot that takes community input to perform actions in a game like 'twitchplayspokemon'.
 
