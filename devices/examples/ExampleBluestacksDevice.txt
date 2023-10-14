@@ -1,0 +1,18 @@
+name = "ExampleBluestacksDevice"
+
+# WindowsAndroidDevice is the device type for something that acts like an Android phone, but IS a Windows App.
+# So, emulators like Bluestacks apply here. And phone mirroring apps like Scrcpy.
+type = "WindowsAndroidDevice"
+
+# window_crop_LTRB allows you to specify the borders that the app adds to the screen.
+# Specified in the order left, top, right, bottom.
+# The default works for Bluestacks since it has a 1 pixel border with additional 32 pixel bars on the top and right.
+window_crop_LTRB = [1, 33, 33, 1]
+
+# window_title is the Windows app window title (e.g. "Untitled - Notepad" when you open the Notepad app).
+# In Bluestacks, this is usually the name you give the instance when you create it.
+window_title = "MyBluestacks"
+
+# Below have descriptions in ExampleStreamingAndroidDevice.
+screenshot_size = [1280, 720]
+adb_serial = "127.0.0.1:5555"

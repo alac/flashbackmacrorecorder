@@ -1,0 +1,18 @@
+name = "ExampleScrcpyDevice"
+
+# WindowsAndroidDevice is the device type for something that acts like an Android phone, but IS a Windows App.
+# So, emulators like Bluestacks apply here. And phone mirroring apps like Scrcpy.
+type = "WindowsAndroidDevice"
+
+# window_crop_LTRB allows you to specify the borders that the app adds to the screen.
+# Specified in the order left, top, right, bottom.
+# Scrcpy has no border, so just leave it as all zeros.
+window_crop_LTRB = [0, 0, 0, 0]
+
+# window_title is the Windows app window title (e.g. "Untitled - Notepad" when you open the Notepad app).
+# Scrcpy uses the internal model number of the phone, which you probably don't know. So, just open Scrcpy and use what you see.
+window_title = "STSAS546VCPWP"
+
+# Below have descriptions in ExampleStreamingAndroidDevice.
+screenshot_size = [720, 350]
+adb_serial = "R58M42MZNLB"

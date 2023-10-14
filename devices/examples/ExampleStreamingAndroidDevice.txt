@@ -1,0 +1,16 @@
+name = "ExampleStreamingAndroidDevice"
+
+# StreamingAndroidDevice is the device type for anything that acts like an Android phone.
+type = "StreamingAndroidDevice"
+
+# screenshot_size is the size of screenshots when they're saved.
+# It should have the same aspect ratio as your phone.
+# A smaller screenshot_size means the image matching will be faster.
+# The default size of [720, 350] works well for me.
+screenshot_size = [720, 350]
+
+# adb_serial is a unique identifier for the device.
+# If you've done the setup steps prior to this correctly, you should be able to open up the command line and type "adb devices" and it spit out something like:
+#    List of devices attached
+#    1234567890abcdef device
+adb_serial = "1234567890abcdef"

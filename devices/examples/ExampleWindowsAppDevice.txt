@@ -1,0 +1,16 @@
+name = "ExampleWindowsAppDevice"
+
+# WindowsAppDevice is the device type for Windows Apps.
+type = "WindowsAppDevice"
+
+# screenshot_size is the size of screenshots when they're saved.
+# It should have the same aspect ratio as your phone.
+# A smaller screenshot_size means the image matching will be faster.
+screenshot_size = [720, 350]
+
+# window_crop_LTRB allows you to specify the borders that the app adds to the screen.
+# Specified in the order left, top, right, bottom.
+window_crop_LTRB = [0, 0, 0, 0]
+
+# window_title is the Windows app window title (e.g. "Untitled - Notepad" when you open the Notepad app).
+window_title = "SM-G975U1"
