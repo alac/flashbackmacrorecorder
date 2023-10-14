@@ -193,4 +193,9 @@ fabric.properties
 .idea/caches/build_file_checksums.ser
 
 # configs
+configs/**
+debug/**
+devices/**
+!devices/examples/**
+logs/**
 *.db
