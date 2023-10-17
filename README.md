@@ -22,6 +22,8 @@ FBMR can be used for:
 
 ## Installation
 
+Install python if you don't have it; tested on 3.10.
+
 1. Clone the GitHub repository:
 
 ```
