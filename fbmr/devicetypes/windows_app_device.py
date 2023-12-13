@@ -238,11 +238,28 @@ class WindowManager:
 
 
 def screenshot_window(
-        window_manager,
-        target_size,
-        whole_window=False,
-        crop_settings=None):
-    # grab window reference + make active
+    window_manager,
+    target_size,
+    whole_window=False,
+    crop_settings=None,
+):
+    """
+    Grab a screenshot of a window.
+
+    Args:
+        window_manager: The window manager object.
+        target_size: The desired size of the screenshot.
+        whole_window:  Whether to capture the entire window or just the client area.
+        crop_settings: A tuple of four integers (left, top, right, bottom) specifying the
+            portion of the screenshot to crop.
+
+    Returns:
+        A tuple of three values:
+            - The scale factor applied to the screenshot to account for DPI scaling.
+            - The cropped and resized screenshot image.
+    """
+
+    # Grab window reference and make active
     # device.set_dpi_aware()
     w = window_manager
     # w.set_foreground()
@@ -250,59 +267,67 @@ def screenshot_window(
 
     dpi_scale = windll.user32.GetDpiForWindow(hwnd) / 96.0
 
-    # get coordinates
+    # Get coordinates
     if whole_window:
-        # bounding box relative to screen
-        left, top, right, bot = win32gui.GetWindowRect(hwnd)
+        # Bounding box relative to screen
+        left, top, right, bottom = win32gui.GetWindowRect(hwnd)
     else:
         # "GetClientRect() does not include the border and title bar."
-        # bounding box relative to client area (e.g. left and top are always 0)
-        left, top, right, bot = win32gui.GetClientRect(hwnd)
-    w = int((right - left) * dpi_scale)
-    h = int((bot - top) * dpi_scale)
+        # Bounding box relative to client area (e.g. left and top are always 0)
+        left, top, right, bottom = win32gui.GetClientRect(hwnd)
 
-    hwndDC = win32gui.GetWindowDC(hwnd)
-    mfcDC = win32ui.CreateDCFromHandle(hwndDC)
-    saveDC = mfcDC.CreateCompatibleDC()
+    width = int((right - left) * dpi_scale)
+    height = int((bottom - top) * dpi_scale)
 
-    saveBitMap = win32ui.CreateBitmap()
-    saveBitMap.CreateCompatibleBitmap(mfcDC, w, h)
+    hwnd_dc = win32gui.GetWindowDC(hwnd)
+    mfc_dc = win32ui.CreateDCFromHandle(hwnd_dc)
+    save_dc = mfc_dc.CreateCompatibleDC()
 
-    saveDC.SelectObject(saveBitMap)
+    save_bitmap = win32ui.CreateBitmap()
+    save_bitmap.CreateCompatibleBitmap(mfc_dc, width, height)
+
+    save_dc.SelectObject(save_bitmap)
 
     if whole_window:
-        result = windll.user32.PrintWindow(hwnd, saveDC.GetSafeHdc(), 0)
+        result = windll.user32.PrintWindow(hwnd, save_dc.GetSafeHdc(), 0)
     else:
-        result = windll.user32.PrintWindow(hwnd, saveDC.GetSafeHdc(), 1)
+        result = windll.user32.PrintWindow(hwnd, save_dc.GetSafeHdc(), 1)
 
-    bmpinfo = saveBitMap.GetInfo()
-    bmpstr = saveBitMap.GetBitmapBits(True)
+    bmp_info = save_bitmap.GetInfo()
+    bmp_str = save_bitmap.GetBitmapBits(True)
 
     im = Image.frombuffer(
-        'RGB',
-        (bmpinfo['bmWidth'], bmpinfo['bmHeight']),
-        bmpstr, 'raw', 'BGRX', 0, 1)
+        "RGB",
+        (bmp_info["bmWidth"], bmp_info["bmHeight"]),
+        bmp_str,
+        "raw",
+        "BGRX",
+        0,
+        1,
+    )
 
-    win32gui.DeleteObject(saveBitMap.GetHandle())
-    saveDC.DeleteDC()
-    mfcDC.DeleteDC()
-    win32gui.ReleaseDC(hwnd, hwndDC)
+    win32gui.DeleteObject(save_bitmap.GetHandle())
+    save_dc.DeleteDC()
+    mfc_dc.DeleteDC()
+    win32gui.ReleaseDC(hwnd, hwnd_dc)
 
     scale_x, scale_y = (1.0, 1.0)
 
     if result == 1:
-        # do we need to "correct" for dpi_scale before cropping?
-        # should we pre-scale by dpi_scale so that the rest of the app can
+        # Do we need to "correct" for DPI scaling before cropping?
+        # Should we pre-scale by DPI scale so that the rest of the app can
         # be DPI agnostic?
         if dpi_scale != 1.0:
-            simulated_size = (w, h)
+            simulated_size = (width, height)
             im = im.resize(simulated_size, Image.ANTIALIAS)
 
         if crop_settings is not None:
             if LOGGING:
-                print("Cropping : " + str(crop_settings))
-            # transform from edge relative to TOP-LEFT only points which is what pill does.
-            # the top-left and bottom-right coordinates of the rectangle (left, top, right, bottom)
+                print("Cropping: " + str(crop_settings))
+
+            # Transform from edge relative to TOP-LEFT only points, which is what
+            # Pillow does. The top-left and bottom-right coordinates of the
+            # rectangle (left, top, right, bottom)
             left, top, right, bottom = crop_settings
             right = im.width - right
             bottom = im.height - bottom
@@ -310,12 +335,13 @@ def screenshot_window(
             im = im.crop(crop_settings)
 
         if target_size:
-            target_w, target_h = target_size
-            if im.size[0] != target_w or im.size[1] != target_h:
+            target_width, target_height = target_size
+            if im.size[0] != target_width or im.size[1] != target_height:
                 if LOGGING:
                     print("Resizing {} to {}".format(im.size, target_size))
-                scale_x = im.size[0] / float(target_w)
-                scale_y = im.size[1] / float(target_h)
+
+                scale_x = im.size[0] / float(target_width)
+                scale_y = im.size[1] / float(target_height)
                 im = im.resize(target_size, Image.ANTIALIAS)
 
     return scale_x, scale_y, im
@@ -456,12 +482,17 @@ def infer_cropping(image, has_window_border=False):
 
 
 def get_client_window_relative_to_screen(hwnd):
+    """Returns the client area of a window relative to the screen."""
     rect = win32gui.GetWindowRect(hwnd)
-    clientRect = win32gui.GetClientRect(hwnd)
-    windowOffset = math.floor(((rect[2] - rect[0]) - clientRect[2]) / 2)
-    titleOffset = ((rect[3] - rect[1]) - clientRect[3]) - windowOffset
-    return rect[0] + windowOffset, rect[1] + titleOffset, rect[2] - windowOffset, rect[3] - windowOffset
-
+    client_rect = win32gui.GetClientRect(hwnd)
+    window_offset = math.floor(((rect[2] - rect[0]) - client_rect[2]) / 2)
+    title_offset = ((rect[3] - rect[1]) - client_rect[3]) - window_offset
+    return (
+        rect[0] + window_offset,
+        rect[1] + title_offset,
+        rect[2] - window_offset,
+        rect[3] - window_offset,
+    )
 
 def preimage_touch_to_screen_touch(preimage_touch, dpi_scale, left, top, _right, _bottom):
     x, y = preimage_touch
