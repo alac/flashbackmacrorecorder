@@ -21,7 +21,7 @@ class WindowsAppDevice(device.WindowsAppInterfaceDevice):
     """WindowsAppDevice communicates with a running Windows application via WINDOWS apis to capture and click.
     Uses basic win32 apis, which may not always work (e.g. windll.user32.PrintWindow fails for some games)."""
 
-    def __init__(self, target_size=(720, 1280), crop_settings=None, window_title_regexes=[]):
+    def __init__(self, target_size=(720, 1280), crop_settings=None, window_title_regexes=None):
         """
         crop_settings = (left, top, right, bottom) relative to their own edge instead of
             being TOP-LEFT and BOTTOM-RIGHT points relative to the TOP-LEFT corner.
@@ -30,6 +30,9 @@ class WindowsAppDevice(device.WindowsAppInterfaceDevice):
         self.target_size = target_size
         self._scale_x = 1.0
         self._scale_y = 1.0
+
+        if not window_title_regexes:
+            window_title_regexes = []
 
         found = False
         for window_title_regex in window_title_regexes:
@@ -295,7 +298,7 @@ def screenshot_window(
     if whole_window:
         result = windll.user32.PrintWindow(hwnd, save_dc.GetSafeHdc(), 0)
     else:
-        result = windll.user32.PrintWindow(hwnd, save_dc.GetSafeHdc(), PW_CLIENTONLY|PW_RENDERFULLCONTENT)
+        result = windll.user32.PrintWindow(hwnd, save_dc.GetSafeHdc(), PW_CLIENTONLY | PW_RENDERFULLCONTENT)
 
     bmp_info = save_bitmap.GetInfo()
     bmp_str = save_bitmap.GetBitmapBits(True)
@@ -404,14 +407,14 @@ def infer_cropping(image, has_window_border=False):
         while x != fx or y != fy:
             successes = 0
             for i in range(trials):
-                testX = x
-                testY = y
+                test_x = x
+                test_y = y
                 if randomize_x:
-                    testX = randint(0, w - 1)
+                    test_x = randint(0, w - 1)
                 if randomize_y:
-                    testY = randint(0, h - 1)
+                    test_y = randint(0, h - 1)
 
-                if z(testX, testY):
+                if z(test_x, test_y):
                     successes += 1
 
             if successes > 0:
@@ -497,6 +500,7 @@ def get_client_window_relative_to_screen(hwnd):
         rect[2] - window_offset,
         rect[3] - window_offset,
     )
+
 
 def preimage_touch_to_screen_touch(preimage_touch, dpi_scale, left, top, _right, _bottom):
     x, y = preimage_touch
