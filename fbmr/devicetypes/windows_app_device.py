@@ -12,6 +12,10 @@ from fbmr.devicetypes import device
 
 LOGGING = False
 
+# windows constants
+PW_CLIENTONLY = 1
+PW_RENDERFULLCONTENT = 2
+
 
 class WindowsAppDevice(device.WindowsAppInterfaceDevice):
     """WindowsAppDevice communicates with a running Windows application via WINDOWS apis to capture and click.
@@ -291,7 +295,7 @@ def screenshot_window(
     if whole_window:
         result = windll.user32.PrintWindow(hwnd, save_dc.GetSafeHdc(), 0)
     else:
-        result = windll.user32.PrintWindow(hwnd, save_dc.GetSafeHdc(), 1)
+        result = windll.user32.PrintWindow(hwnd, save_dc.GetSafeHdc(), PW_CLIENTONLY|PW_RENDERFULLCONTENT)
 
     bmp_info = save_bitmap.GetInfo()
     bmp_str = save_bitmap.GetBitmapBits(True)
