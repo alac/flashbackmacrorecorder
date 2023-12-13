@@ -1,5 +1,6 @@
 import os
 import time
+import logging.config
 import datetime
 
 from fbmr.utils.settings import settings
@@ -32,12 +33,14 @@ class DebugSettings:
         delete_stale_files_in_folder(self.debug_folder, settings.get_debug_image_expire_time())
         delete_stale_files_in_folder(self.log_folder, settings.get_debug_log_expire_time())
 
+        initialize_logger(self.log_folder)
+
         self.save_detect_subimage_images = False
         self.log_detect_subimage = False
-        self.detect_subimages_logger = lambda x: print(x)
+        self.detect_subimages_logger = lambda x: logging.getLogger("fbmr_logger").debug(x)
 
-        self.action_logger = lambda x: print("  ", x)
-        self.condition_logger = lambda x: print("    ", x)
+        self.action_logger = lambda x: logging.getLogger("fbmr_logger").debug(x)
+        self.condition_logger = lambda x: logging.getLogger("fbmr_logger").debug(x)
 
         self.timeout_timestamp = 0
         self.timeout_duration = 0
@@ -58,6 +61,13 @@ class DebugSettings:
     def clear_timeout(self):
         self.timeout_timestamp = 0
         self.timeout_duration = 0
+
+
+def initialize_logger(log_folder: str):
+    current_time = datetime.datetime.now()
+    formatted_time = current_time.strftime('%Y-%m-%d_%H-%M-%S')
+    filename = f"debug_{formatted_time}.log"
+    logging.config.fileConfig('logging.conf', defaults={'logfilename': os.path.join('logs', filename)})
 
 
 debug_settings = DebugSettings()
