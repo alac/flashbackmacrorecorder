@@ -19,7 +19,7 @@ PW_RENDERFULLCONTENT = 2
 
 class WindowsAppDevice(device.WindowsAppInterfaceDevice):
     """WindowsAppDevice communicates with a running Windows application via WINDOWS apis to capture and click.
-    Uses basic win32 apis, which may not always work (e.g. windll.user32.PrintWindow fails for some games)."""
+    Uses windll.user32.PrintWindow, which relies on _the app_ implementing screenshot behavior."""
 
     def __init__(self, target_size=(720, 1280), crop_settings=None, window_title_regexes=None):
         """
@@ -120,12 +120,12 @@ class WindowsAppDevice(device.WindowsAppInterfaceDevice):
         # type: (int, int) -> None
         """x and y are from the top corner"""
         py_click(self._window_manager, (x, y), self._crop_settings,
-                 (self._scale_x, self._scale_y), True)
+                 (self._scale_x, self._scale_y))
 
     def swipe(self, x, y, x2, y2, duration):
         # type: (int, int, int, int, float) -> None
         py_swipe(self._window_manager, (x, y), (x2, y2), duration, self._crop_settings,
-                 (self._scale_x, self._scale_y), True)
+                 (self._scale_x, self._scale_y))
 
 
 def transform_point_to_window(
@@ -247,16 +247,22 @@ class WindowManager:
 def screenshot_window(
     window_manager,
     target_size,
-    whole_window=False,
     crop_settings=None,
 ):
     """
     Grab a screenshot of a window.
 
+    Depends on 'windll.user32.PrintWindow' which depends on the window to screenshot itself.
+    This is how the behavior varies for the 'flags' argument.
+    | App             | flag=0 | flag=PW_CLIENTONLY|PW_RENDERFULLCONTENT |
+    |-----------------|--------|-----------------------------------------|
+    | scrcpy          | Works  | Works                                   |
+    | NIKKE           | Blank  | Blank                                   |
+    | Persona 5 Royal | Blank  | Works                                   |
+
     Args:
         window_manager: The window manager object.
         target_size: The desired size of the screenshot.
-        whole_window:  Whether to capture the entire window or just the client area.
         crop_settings: A tuple of four integers (left, top, right, bottom) specifying the
             portion of the screenshot to crop.
 
@@ -267,21 +273,14 @@ def screenshot_window(
     """
 
     # Grab window reference and make active
-    # device.set_dpi_aware()
     w = window_manager
-    # w.set_foreground()
     hwnd = w.window_handle
 
     dpi_scale = windll.user32.GetDpiForWindow(hwnd) / 96.0
 
-    # Get coordinates
-    if whole_window:
-        # Bounding box relative to screen
-        left, top, right, bottom = win32gui.GetWindowRect(hwnd)
-    else:
-        # "GetClientRect() does not include the border and title bar."
-        # Bounding box relative to client area (e.g. left and top are always 0)
-        left, top, right, bottom = win32gui.GetClientRect(hwnd)
+    # "GetClientRect() does not include the border and title bar."
+    # Bounding box relative to client area (e.g. left and top are always 0)
+    left, top, right, bottom = win32gui.GetClientRect(hwnd)
 
     width = int((right - left) * dpi_scale)
     height = int((bottom - top) * dpi_scale)
@@ -289,16 +288,10 @@ def screenshot_window(
     hwnd_dc = win32gui.GetWindowDC(hwnd)
     mfc_dc = win32ui.CreateDCFromHandle(hwnd_dc)
     save_dc = mfc_dc.CreateCompatibleDC()
-
     save_bitmap = win32ui.CreateBitmap()
     save_bitmap.CreateCompatibleBitmap(mfc_dc, width, height)
-
     save_dc.SelectObject(save_bitmap)
-
-    if whole_window:
-        result = windll.user32.PrintWindow(hwnd, save_dc.GetSafeHdc(), 0)
-    else:
-        result = windll.user32.PrintWindow(hwnd, save_dc.GetSafeHdc(), PW_CLIENTONLY | PW_RENDERFULLCONTENT)
+    result = windll.user32.PrintWindow(hwnd, save_dc.GetSafeHdc(), PW_CLIENTONLY | PW_RENDERFULLCONTENT)
 
     bmp_info = save_bitmap.GetInfo()
     bmp_str = save_bitmap.GetBitmapBits(True)
@@ -511,7 +504,7 @@ def preimage_touch_to_screen_touch(preimage_touch, dpi_scale, left, top, _right,
     return x, y
 
 
-def py_click(window_manager, touch_xy, crop_settings, scale_xy, whole_window):
+def py_click(window_manager, touch_xy, crop_settings, scale_xy):
     dpi_scale = 1.0  # windll.user32.GetDpiForWindow(hwnd) / 96.0
 
     if LOGGING:
@@ -525,10 +518,6 @@ def py_click(window_manager, touch_xy, crop_settings, scale_xy, whole_window):
     w = window_manager
     hwnd = w.window_handle
 
-    # get coordinates
-    if LOGGING:
-        print(f"whole window {whole_window}")
-
     left, top, right, bottom = get_client_window_relative_to_screen(hwnd)
     x, y = preimage_touch_to_screen_touch(preimage_touch, dpi_scale, left, top, right, bottom)
     if LOGGING:
@@ -538,7 +527,7 @@ def py_click(window_manager, touch_xy, crop_settings, scale_xy, whole_window):
     pyautogui.click(x=x, y=y)
 
 
-def py_swipe(window_manager, from_xy, to_xy, duration, crop_settings, scale_xy, whole_window):
+def py_swipe(window_manager, from_xy, to_xy, duration, crop_settings, scale_xy):
     dpi_scale = 1.0  # windll.user32.GetDpiForWindow(hwnd) / 96.0
 
     if LOGGING:
@@ -551,10 +540,6 @@ def py_swipe(window_manager, from_xy, to_xy, duration, crop_settings, scale_xy, 
     # grab window reference + make active
     w = window_manager
     hwnd = w.window_handle
-
-    # get coordinates
-    if LOGGING:
-        print(f"whole window {whole_window}")
 
     left, top, right, bottom = get_client_window_relative_to_screen(hwnd)
     x, y = preimage_touch_to_screen_touch(preimage_from, dpi_scale, left, top, right, bottom)
