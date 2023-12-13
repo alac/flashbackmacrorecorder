@@ -155,7 +155,7 @@ class Action(object):
         if not self.is_enabled:
             return 0, (0, 0, 0, 0)
 
-        debug_settings.action_logger(f"Checking action: {self.name}")
+        debug_settings.action_logger(f"Checking action {self.name}: starting")
         min_validity = 100.0
         min_rect = (0, 0, 0, 0)
         for c in self.conditions:
@@ -164,7 +164,7 @@ class Action(object):
                 min_validity = validity
                 min_rect = rect
         if len(self.conditions) > 0:
-            debug_settings.action_logger(f"Action score: {int(min_validity)}")
+            debug_settings.action_logger(f"Checking action {self.name}: final score {int(min_validity)}")
         return min_validity, min_rect
 
     def is_valid(self, pil_image, state_dict, utils):

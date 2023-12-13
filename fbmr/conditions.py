@@ -95,8 +95,7 @@ class ImageCondition(Condition):
 
         scaled_strength = strength * self.weight * 100 + state_dict.get("viability_adjustment", 0)
         debug_settings.condition_logger(
-            f'{self.__class__.__name__}. Matching {self.image_path}'
-            f'\n\tMatch quality {int(scaled_strength)} (Required: {self.threshold})')
+            f'{self.__class__.__name__} match {int(scaled_strength)}/{self.threshold} for {self.image_path}')
         if validity_test(scaled_strength, self.threshold):
             if self.save_region_as:
                 state_dict[self.save_region_as] = updated_box

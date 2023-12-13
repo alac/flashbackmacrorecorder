@@ -3,6 +3,7 @@ from typing import List, Union, Optional, Tuple
 import subprocess
 from PIL import Image, ImageDraw
 from abc import ABC, abstractmethod
+import logging
 
 from fbmr.utils.debug_settings import debug_settings
 from fbmr.config import Config, Action
@@ -59,22 +60,25 @@ class Executor:
                 if executed_action and len(start_action_names) > 1:
                     start_action_names = [executed_action.name]
                 if executed_action and end_action_names and executed_action.name in end_action_names:
-                    print(f"Chain completed: {start_action_names} -> {executed_action.name}; returning")
+                    logging.getLogger("fbmr_logger").info(
+                        f"action_chain completed: {start_action_names} -> {executed_action.name}; returning")
                     self.execution_hook and self.execution_hook.chain_completed(start_action_names,
                                                                                 executed_action.name, self.config)
                     break
             except subprocess.CalledProcessError:
-                print("adb error")
+                logging.getLogger("fbmr_logger").error("adb error")
                 time.sleep(10)
 
             end = time.time()
             minutes = (end - start) / 60
             if max_minutes != 0 and minutes > max_minutes:
-                print(f"max_minutes exceeded for {start_action_names}; uptime: {minutes} minutes")
+                logging.getLogger("fbmr_logger").warning(
+                    f"max_minutes exceeded for {start_action_names}; uptime: {minutes} minutes")
                 self.execution_hook and self.execution_hook.chain_timed_out(start_action_names, minutes * 60,
                                                                             self.config)
                 break
-            print(f"Executing chain starting from {start_action_names}; uptime: {minutes} minutes")
+            logging.getLogger("fbmr_logger").info(
+                f"action_chain execution starting from {start_action_names}; uptime: {minutes} minutes")
 
             wait_time = min(float(min_action_delay) - (time.time() - action_start), min_action_delay)
             if wait_time > 0:
@@ -95,9 +99,14 @@ class Executor:
                             end_action_names: Optional[List[str]] = None) -> Optional[Action]:
         self.next_action_names = [n for n in self.next_action_names if n]
         if len(self.next_action_names) > 0:
-            print(f"execute_best_action: next_action_names {self.next_action_names}")
+            logging.getLogger("fbmr_logger").info(
+                f"execute_best_action: next_action_names {self.next_action_names}")
 
-        action_scores = self.score_actions(pil_image, state_dict, utils, self.next_action_names or [a.name for a in self.config.actions])
+        action_scores = self.score_actions(
+            pil_image,
+            state_dict,
+            utils,
+            self.next_action_names or [a.name for a in self.config.actions])
         action = self.config.get_action(action_scores[0].action_name)
 
         def confirm_action():
@@ -105,14 +114,15 @@ class Executor:
                 confirmation_image = utils["device"].screen_capture()
                 confirm_viability = action.is_valid(confirmation_image, state_dict, utils)
                 if confirm_viability < 20:
-                    print("execute_best_action: confirm failed ", action.name, " viability ", confirm_viability)
+                    logging.getLogger("fbmr_logger").debug(
+                        f"execute_best_action: confirm failed {action.name} viability {confirm_viability}")
                     return False
             return True
 
         annotated_image = annotate_image_with_bounding_boxes(pil_image,
                                                              [(a.score, a.bounding_box) for a in action_scores])
         if action and action_scores[0].score > 20 and confirm_action():
-            print("execute_best_action: running ", action.name)
+            logging.getLogger("fbmr_logger").info(f"execute_best_action: running {action.name}")
             self.apply_and_wait(action, pil_image, annotated_image, state_dict, utils)
             self.next_action_names = action.next_action_names
             if self.throw_if_end_action_not_reached:
@@ -131,7 +141,7 @@ class Executor:
         action.apply(pil_image, state_dict, utils)
         self.execution_hook and self.execution_hook.after_action(action, action.cooldown, self.config)
         if action.cooldown:
-            print(f"Waiting for {action.name}'s cooldown: {action.cooldown:.2f}")
+            logging.getLogger("fbmr_logger").info(f"Waiting for {action.name}'s cooldown: {action.cooldown:.2f}")
             sleep_countdown(action.cooldown, interval=.1)
         if action.advance_if_condition:
             device = utils["device"]
@@ -149,14 +159,14 @@ class Executor:
 
                 # wait for this action to be completed
                 if action.advance_if_condition.is_valid(sc, state_dict, utils):
-                    print(f"Action advance_if_condition satisfied", end='\n', flush=True)
+                    logging.getLogger("fbmr_logger").info(f"Action advance_if_condition satisfied")
                     break
 
                 # or for the next action to become available
                 def a_next_action_is_valid():
                     for next_action_name in action.next_action_names:
                         if self.config.get_action(next_action_name).is_valid(sc, state_dict, utils):
-                            print(f"Next action became valid", end='\n', flush=True)
+                            logging.getLogger("fbmr_logger").info(f"Next action became valid")
                             return True
                     return False
 
@@ -167,12 +177,13 @@ class Executor:
                 # however, if we get stuck, try to get out of it by repeating the action
                 if (time.time() - last_retry) > retry_duration:
                     sc = device.screen_capture()
-                    print("execute_best_action: checking for retry ", action.name)
+                    logging.getLogger("fbmr_logger").debug("execute_best_action: checking for retry {action.name}")
                     viability = action.is_valid(sc, state_dict, utils)
                     if viability != 0:
                         retries += 1
                         action.apply(sc, state_dict, utils)
-                        print(f"execute_best_action: retried {action.name} with viability {viability}")
+                        logging.getLogger("fbmr_logger").debug(
+                            f"execute_best_action: retried {action.name} with viability {viability}")
                         last_retry = time.time()
                 time.sleep(.5)
         print("\n", flush=True)

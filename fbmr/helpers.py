@@ -1,4 +1,5 @@
 import time
+import logging
 
 
 def time_str(seconds):
@@ -48,7 +49,8 @@ def apply_action_and_wait_to_become_invalid(log_prefix, action_name, success_sta
         action = config.get_action(action_name)
         viability = action.is_valid(image, state, utils)
 
-        print(f"{log_prefix}: checking ", action.name, " viability ", viability)
+        logging.getLogger("fbmr_logger").debug(
+            f"{log_prefix}: checking ", action.name, " viability ", viability)
         if viability == 0 and not clicked:
             # waiting for the action to become valid
             continue
@@ -88,7 +90,8 @@ def apply_action_and_wait_for_next_action(log_prefix, action_name, next_action_n
         action = config.get_action(action_name)
         viability = action.is_valid(image, state, utils)
 
-        print(f"{log_prefix}: checking ", action.name, " viability ", viability)
+        logging.getLogger("fbmr_logger").debug(
+            f"{log_prefix}: checking ", action.name, " viability ", viability)
         if viability == 0 and not clicked:
             # waiting for the action to become valid
             continue

@@ -3,6 +3,7 @@ import pyautogui
 import re
 import win32gui
 import win32ui
+import logging
 from PIL import Image
 from ctypes import windll
 from random import randint
@@ -10,11 +11,13 @@ from typing import Optional
 
 from fbmr.devicetypes import device
 
-LOGGING = False
-
 # windows constants
 PW_CLIENTONLY = 1
 PW_RENDERFULLCONTENT = 2
+
+
+def log(message: str):
+    logging.getLogger("fbmr_logger").debug(f"{__name__}: {message}")
 
 
 class WindowsAppDevice(device.WindowsAppInterfaceDevice):
@@ -110,7 +113,7 @@ class WindowsAppDevice(device.WindowsAppInterfaceDevice):
         sc = self.screen_capture_raw(crop_settings=self._crop_settings)
         crop_settings = infer_cropping(sc)
         if crop_settings != (0, 0, 0, 0):
-            print(
+            logging.getLogger("fbmr_logger").warning(
                 f"WARNING: screenshot has black borders\nScreenshots may be inaccurate.\nBorders detected (left, top, "
                 f"right, bottom) {crop_settings}")
             return True
@@ -137,13 +140,11 @@ def transform_point_to_window(
     E.g. (0, 0) would be the TOP LEFT of the app window.
     """
     x, y = point_xy
-    # print("transform_point_to_window point {}, scale {}".format(point_xy, scale_xy))
 
     # undo the scaling
     sx, sy = scale_xy
     x = sx * x
     y = sy * y
-    # print("transform_point_to_window post scale point {}".format([x,y]))
 
     left, top, right, bottom = crop_settings
     return x + left, y + top
@@ -322,9 +323,6 @@ def screenshot_window(
             im = im.resize(simulated_size, Image.ANTIALIAS)
 
         if crop_settings is not None:
-            if LOGGING:
-                print("Cropping: " + str(crop_settings))
-
             # Transform from edge relative to TOP-LEFT only points, which is what
             # Pillow does. The top-left and bottom-right coordinates of the
             # rectangle (left, top, right, bottom)
@@ -337,9 +335,6 @@ def screenshot_window(
         if target_size:
             target_width, target_height = target_size
             if im.size[0] != target_width or im.size[1] != target_height:
-                if LOGGING:
-                    print("Resizing {} to {}".format(im.size, target_size))
-
                 scale_x = im.size[0] / float(target_width)
                 scale_y = im.size[1] / float(target_height)
                 im = im.resize(target_size, Image.ANTIALIAS)
@@ -354,11 +349,10 @@ def infer_cropping_and_check(image, target_size):
     nw = w - l - r
     nh = h - t - b
 
-    print("crop ratios {0} desired {1}".format(
-        (float(nw) / nh), float(target_size[0]) / target_size[1]))
+    log("crop ratios {0} desired {1}".format((float(nw) / nh), float(target_size[0]) / target_size[1]))
 
     if abs((float(nw) / nh) - float(target_size[0]) / target_size[1]) > .04:
-        print('Crop did not have desired ratio:', (l, t, r, b))
+        log(f"Crop did not have desired ratio:, ({l}, {t}, {r}, {b})")
         return 0, 0, 0, 0
     return l, t, r, b
 
@@ -415,7 +409,7 @@ def infer_cropping(image, has_window_border=False):
 
             x += dx
             y += dy
-        print("Walked to center")
+        log("infer_cropping walked to center")
         raise ValueError("Couldn't find intended pixel value")
 
     max_x, max_y = w - 1, h - 1
@@ -507,12 +501,10 @@ def preimage_touch_to_screen_touch(preimage_touch, dpi_scale, left, top, _right,
 def py_click(window_manager, touch_xy, crop_settings, scale_xy):
     dpi_scale = 1.0  # windll.user32.GetDpiForWindow(hwnd) / 96.0
 
-    if LOGGING:
-        print("click on phone screen @ {touch_xy}")
+    log("click on phone screen @ {touch_xy}")
     preimage_touch = transform_point_to_window(
         crop_settings, scale_xy, touch_xy)
-    if LOGGING:
-        print("click on window client @ {preimage_touch}")
+    log("click on window client @ {preimage_touch}")
 
     # grab window reference + make active
     w = window_manager
@@ -520,8 +512,7 @@ def py_click(window_manager, touch_xy, crop_settings, scale_xy):
 
     left, top, right, bottom = get_client_window_relative_to_screen(hwnd)
     x, y = preimage_touch_to_screen_touch(preimage_touch, dpi_scale, left, top, right, bottom)
-    if LOGGING:
-        print(f">>> click on computer screen {x}, {y}")
+    log(f">>> click on computer screen {x}, {y}")
 
     pyautogui.moveTo(x, y)
     pyautogui.click(x=x, y=y)
@@ -530,12 +521,10 @@ def py_click(window_manager, touch_xy, crop_settings, scale_xy):
 def py_swipe(window_manager, from_xy, to_xy, duration, crop_settings, scale_xy):
     dpi_scale = 1.0  # windll.user32.GetDpiForWindow(hwnd) / 96.0
 
-    if LOGGING:
-        print(f"swipe phone screen from @ {from_xy} to {to_xy}")
+    log(f"swipe phone screen from @ {from_xy} to {to_xy}")
     preimage_from = transform_point_to_window(crop_settings, scale_xy, from_xy)
     preimage_to = transform_point_to_window(crop_settings, scale_xy, to_xy)
-    if LOGGING:
-        print(f"swipe window client from @ {preimage_from} to {preimage_to}")
+    log(f"swipe window client from @ {preimage_from} to {preimage_to}")
 
     # grab window reference + make active
     w = window_manager
@@ -544,8 +533,7 @@ def py_swipe(window_manager, from_xy, to_xy, duration, crop_settings, scale_xy):
     left, top, right, bottom = get_client_window_relative_to_screen(hwnd)
     x, y = preimage_touch_to_screen_touch(preimage_from, dpi_scale, left, top, right, bottom)
     x2, y2 = preimage_touch_to_screen_touch(preimage_to, dpi_scale, left, top, right, bottom)
-    if LOGGING:
-        print(f">>> click on computer screen {x}, {y} to {x2}, {y2}")
+    log(f">>> click on computer screen {x}, {y} to {x2}, {y2}")
 
     ix, iy = pyautogui.position()
 
