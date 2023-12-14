@@ -51,6 +51,10 @@ class Executor:
 
             self.execution_hook and self.execution_hook.searching_for_action(self.next_action_names, self.config)
 
+            minutes = (time.time() - start) / 60
+            logging.getLogger("fbmr_logger").info(
+                f"action_chain '{start_action_names}' running: {minutes:.2f} minutes; next: {self.next_action_names}")
+
             action_start = time.time()
             try:
                 image = device.screen_capture()
@@ -61,7 +65,7 @@ class Executor:
                     start_action_names = [executed_action.name]
                 if executed_action and end_action_names and executed_action.name in end_action_names:
                     logging.getLogger("fbmr_logger").info(
-                        f"action_chain completed: {start_action_names} -> {executed_action.name}; returning")
+                        f"action_chain '{start_action_names}' completed -> {executed_action.name}; returning")
                     self.execution_hook and self.execution_hook.chain_completed(start_action_names,
                                                                                 executed_action.name, self.config)
                     break
@@ -69,16 +73,13 @@ class Executor:
                 logging.getLogger("fbmr_logger").error("adb error")
                 time.sleep(10)
 
-            end = time.time()
-            minutes = (end - start) / 60
+            minutes = (time.time() - start) / 60
             if max_minutes != 0 and minutes > max_minutes:
                 logging.getLogger("fbmr_logger").warning(
-                    f"max_minutes exceeded for {start_action_names}; uptime: {minutes} minutes")
+                    f"action_chain '{start_action_names}' max_minutes exceeded; uptime: {minutes} minutes")
                 self.execution_hook and self.execution_hook.chain_timed_out(start_action_names, minutes * 60,
                                                                             self.config)
                 break
-            logging.getLogger("fbmr_logger").info(
-                f"action_chain execution starting from {start_action_names}; uptime: {minutes} minutes")
 
             wait_time = min(float(min_action_delay) - (time.time() - action_start), min_action_delay)
             if wait_time > 0:
@@ -99,7 +100,7 @@ class Executor:
                             end_action_names: Optional[List[str]] = None) -> Optional[Action]:
         self.next_action_names = [n for n in self.next_action_names if n]
         if len(self.next_action_names) > 0:
-            logging.getLogger("fbmr_logger").info(
+            logging.getLogger("fbmr_logger").debug(
                 f"execute_best_action: next_action_names {self.next_action_names}")
 
         action_scores = self.score_actions(
