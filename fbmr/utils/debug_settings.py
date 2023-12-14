@@ -8,7 +8,8 @@ from fbmr.utils.settings import settings
 
 THIS_FILES_FOLDER = os.path.dirname(os.path.realpath(__file__))
 DEBUG_FOLDER = os.path.join(THIS_FILES_FOLDER, "..", "..", "debug")
-LOGS_FOLDER = os.path.join(THIS_FILES_FOLDER, "..", "..", "logs")
+LOGS_FOLDER_RELATIVE = "logs"
+LOGS_FOLDER_ABSOLUTE = os.path.join(THIS_FILES_FOLDER, "..", "..", LOGS_FOLDER_RELATIVE)
 
 
 def delete_stale_files_in_folder(folder_path, expiration_duration):
@@ -28,19 +29,15 @@ def delete_stale_files_in_folder(folder_path, expiration_duration):
 class DebugSettings:
     def __init__(self):
         self.debug_folder = DEBUG_FOLDER
-        self.log_folder = LOGS_FOLDER
+        self.log_folder = LOGS_FOLDER_ABSOLUTE
 
         delete_stale_files_in_folder(self.debug_folder, settings.get_debug_image_expire_time())
         delete_stale_files_in_folder(self.log_folder, settings.get_debug_log_expire_time())
 
-        initialize_logger(self.log_folder)
+        initialize_logger()
 
         self.save_detect_subimage_images = False
         self.log_detect_subimage = False
-        self.detect_subimages_logger = lambda x: logging.getLogger("fbmr_logger").debug(x)
-
-        self.action_logger = lambda x: logging.getLogger("fbmr_logger").debug(x)
-        self.condition_logger = lambda x: logging.getLogger("fbmr_logger").debug(x)
 
         self.timeout_timestamp = 0
         self.timeout_duration = 0
@@ -63,11 +60,12 @@ class DebugSettings:
         self.timeout_duration = 0
 
 
-def initialize_logger(log_folder: str):
+def initialize_logger():
     current_time = datetime.datetime.now()
     formatted_time = current_time.strftime('%Y-%m-%d_%H-%M-%S')
     filename = f"debug_{formatted_time}.log"
-    logging.config.fileConfig('logging.conf', defaults={'logfilename': os.path.join('logs', filename)})
+    logging.config.fileConfig('logging.conf',
+                              defaults={'logfilename': os.path.join(LOGS_FOLDER_RELATIVE, filename)})
 
 
 debug_settings = DebugSettings()

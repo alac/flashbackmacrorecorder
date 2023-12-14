@@ -1,9 +1,9 @@
+import logging
 import os
 from PIL import Image
 from typing import Optional, Tuple, Callable, TypeAlias
 
 from fbmr.utils.detect_image import find_location_path_pil, pad_region
-from fbmr.utils.debug_settings import debug_settings
 
 
 class Condition(object):
@@ -94,7 +94,7 @@ class ImageCondition(Condition):
             updated_box = (x + c_l, y + c_t, t_width, t_height)
 
         scaled_strength = strength * self.weight * 100 + state_dict.get("viability_adjustment", 0)
-        debug_settings.condition_logger(
+        logging.getLogger("fbmr_logger").debug(
             f'{self.__class__.__name__} match {int(scaled_strength)}/{self.threshold} for {self.image_path}')
         if validity_test(scaled_strength, self.threshold):
             if self.save_region_as:

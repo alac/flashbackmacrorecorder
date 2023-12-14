@@ -1,3 +1,4 @@
+import logging
 import os
 from PIL import Image
 from random import randint
@@ -27,7 +28,7 @@ class Effect(object):
     def adjust_file_path(self, path):
         # type: (str) -> str
         if path.startswith("configs"):
-            # already relative to script root (eg. configs/[category]/...)
+            # already relative to script root (e.g. configs/[category]/...)
             return path
         else:
             if self.folder_path:
@@ -83,7 +84,7 @@ class ClickRegionEffect(Effect):
     def apply(self, pil_image: Image, state_dict: dict, utils: dict):
         l, t, r, b = self.intended_region
         x, y = (l + r) / 2, (t + b) / 2
-        print("    ClickRegionEffect clicking at ", x, ", ", y)
+        logging.getLogger("fbmr_logger").info(f"apply_effect {self.__class__.__name__} clicking at {x}, {y}")
         utils["device"].click(x + variation(), y + variation())
 
 
@@ -134,7 +135,7 @@ class ClickSubimageEffect(Effect):
             x, y = (x + tx, y + ty)
         else:
             x, y = (x + t_width / 2, y + t_height / 2)
-        print("    ClickSubimageEffect clicking at ", x, ", ", y)
+        logging.getLogger("fbmr_logger").info(f"apply_effect {self.__class__.__name__} clicking at {x}, {y}")
         utils["device"].click(x + variation(), y + variation())
 
 
@@ -217,12 +218,13 @@ class ClickSubimageNearestEffect(Effect):
                 continue
 
         if best_location is None:
-            print("    ClickSubimageEffectNearest NO MATCHES")
+            logging.getLogger("fbmr_logger").info(
+                f"apply_effect {self.__class__.__name__} failed to find a click location, giving up")
             return
 
         x, y, t_width, t_height = best_location
         x, y = (x + t_width / 2, y + t_height / 2)
-        print("    ClickSubimageEffectNearest clicking at ", x, ", ", y)
+        logging.getLogger("fbmr_logger").info(f"apply_effect {self.__class__.__name__} clicking at {x}, {y}")
         utils["device"].click(x + variation(), y + variation())
 
 
@@ -309,7 +311,7 @@ class ClickRelativeRegionEffect(Effect):
         x = int(x * capture_size[0] / example_size[0])
         y = int(y * capture_size[1] / example_size[1])
 
-        print("    ClickSubimageEffect clicking at ", x, ", ", y)
+        logging.getLogger("fbmr_logger").info(f"apply_effect {self.__class__.__name__} clicking at {x}, {y}")
         utils["device"].click(x + variation(), y + variation())
 
 
@@ -371,7 +373,7 @@ class DragSubimageEffect(Effect):
         dx, dy = self.movement_amount
         x2, y2 = x + dx, y + dy
 
-        print(f"    DragSubimageEffect scrolling from {x}, {y} to {x2}, {y2}")
+        logging.getLogger("fbmr_logger").info(f"apply_effect {self.__class__.__name__} scroll {x}, {y} to {x2}, {y2}")
         utils["device"].swipe(x + variation(), y + variation(), x2 + variation(), y2 + variation(), self.duration)
 
 
@@ -406,12 +408,11 @@ class ScrollRegionEffect(Effect):
             a_image_path, pil_image)
         assert strength > .1
 
-        start_x, start_y = get_location_from_name(self.start, box)
-        end_x, end_y = get_location_from_name(self.end, box)
+        x, y = get_location_from_name(self.start, box)
+        x2, y2 = get_location_from_name(self.end, box)
 
-        print(f"    ScrollRegionEffect scrolling from {start_x}, {start_y} to {end_x}, {end_y}")
-
-        utils["device"].swipe(start_x + variation(), start_y + variation(), end_x + variation(), end_y + variation(), 0)
+        logging.getLogger("fbmr_logger").info(f"apply_effect {self.__class__.__name__} scroll {x}, {y} to {x2}, {y2}")
+        utils["device"].swipe(x + variation(), y + variation(), x2 + variation(), y2 + variation(), 0)
 
 
 class ScrollRelativeRegionEffect(Effect):
@@ -459,14 +460,13 @@ class ScrollRelativeRegionEffect(Effect):
         capture_size = pil_image.size
         example_size = scene_image.size
 
-        start_x = int(start_x * capture_size[0] / example_size[0])
-        start_y = int(start_y * capture_size[1] / example_size[1])
-        end_x = int(end_x * capture_size[0] / example_size[0])
-        end_y = int(end_y * capture_size[1] / example_size[1])
+        x = int(start_x * capture_size[0] / example_size[0])
+        y = int(start_y * capture_size[1] / example_size[1])
+        x2 = int(end_x * capture_size[0] / example_size[0])
+        y2 = int(end_y * capture_size[1] / example_size[1])
 
-        print(f"    ScrollRelativeRegionEffect scrolling from {start_x}, {start_y} to {end_x}, {end_y}")
-
-        utils["device"].swipe(start_x + variation(), start_y + variation(), end_x + variation(), end_y + variation(), 0)
+        logging.getLogger("fbmr_logger").info(f"apply_effect {self.__class__.__name__} scroll {x}, {y} to {x2}, {y2}")
+        utils["device"].swipe(x + variation(), y + variation(), x2 + variation(), y2 + variation(), 0)
 
 
 def get_location_from_name(name: str, box: tuple[int, int, int, int]) -> tuple[int, int]:

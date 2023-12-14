@@ -142,7 +142,7 @@ class Executor:
         action.apply(pil_image, state_dict, utils)
         self.execution_hook and self.execution_hook.after_action(action, action.cooldown, self.config)
         if action.cooldown:
-            logging.getLogger("fbmr_logger").info(f"Waiting for {action.name}'s cooldown: {action.cooldown:.2f}")
+            logging.getLogger("fbmr_logger").info(f"action {action.name} applied; cooldown: {action.cooldown:.2f}")
             sleep_countdown(action.cooldown, interval=.1)
         if action.advance_if_condition:
             device = utils["device"]
@@ -160,25 +160,26 @@ class Executor:
 
                 # wait for this action to be completed
                 if action.advance_if_condition.is_valid(sc, state_dict, utils):
-                    logging.getLogger("fbmr_logger").info(f"Action advance_if_condition satisfied")
+                    logging.getLogger("fbmr_logger").info(f"action {action.name} advance_if_condition satisfied")
                     break
 
                 # or for the next action to become available
                 def a_next_action_is_valid():
                     for next_action_name in action.next_action_names:
                         if self.config.get_action(next_action_name).is_valid(sc, state_dict, utils):
-                            logging.getLogger("fbmr_logger").info(f"Next action became valid")
+                            logging.getLogger("fbmr_logger").info(
+                                f"action {action.name}'s next action {next_action_name} became valid")
                             return True
                     return False
 
                 if a_next_action_is_valid():
                     break
 
-                print(f"Waiting for {action.name}'s advance_if_condition: {elapsed:.2f} elapsed", end='\n', flush=True)
+                print(f"action {action.name} waiting for success: {elapsed:.2f} elapsed", end='\n', flush=True)
                 # however, if we get stuck, try to get out of it by repeating the action
                 if (time.time() - last_retry) > retry_duration:
                     sc = device.screen_capture()
-                    logging.getLogger("fbmr_logger").debug("execute_best_action: checking for retry {action.name}")
+                    logging.getLogger("fbmr_logger").debug(f"execute_best_action: checking for retry {action.name}")
                     viability = action.is_valid(sc, state_dict, utils)
                     if viability != 0:
                         retries += 1

@@ -5,6 +5,7 @@ methods for detecting an image within a bigger image + debugging.
 """
 
 import datetime
+import logging
 import ntpath
 import os
 from pathlib import Path
@@ -94,8 +95,7 @@ def find_location_cv_multi(template_cvimg, scene_cvimg, threshold=.5, min_count=
             break
         x, y = max_loc
         strengths_and_bounding_boxes.append((max_val, (x, y, t_width, t_height)))
-        if debug_settings.log_detect_subimage:
-            debug_settings.detect_subimages_logger("match (str {}) at x,y ({}, {}) with size ({}, {})".format(
+        logging.getLogger("fbmr_logger").debug("template_matching (str {}) at x,y ({}, {}) with size ({}, {})".format(
                 max_val, x, y, w, h))
         result[max_loc[1] - h // 2:max_loc[1] + h // 2 + 1, max_loc[0] - w // 2:max_loc[0] + w // 2 + 1] = 0
         count += 1
@@ -133,7 +133,7 @@ def write_debug_image(scene_cvimg, strength, bounding_boxes, template_name="UNKN
             ".png", " {}.png".format(str(strength)[:4])))
 
         if debug_settings.log_detect_subimage:
-            debug_settings.detect_subimages_logger(f"Saving image {debug_image_path}")
+            debug_settings.detect_subimages_logger(f"template_matching saving image {debug_image_path}")
         cv2.imwrite(debug_image_path, source)
 
     if display_window:
