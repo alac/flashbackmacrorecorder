@@ -26,8 +26,9 @@ def sleep_countdown(duration, interval=1.0):
     end_time = time.time() + duration
     while time.time() < end_time:
         wait_time = end_time - time.time()
-        print(f"\rsleeping for {time_str(wait_time)}", end="")
+        print(f"\rSleeping for {time_str(wait_time)}", end="")
         time.sleep(max(min(interval, end_time - time.time()), 0))
+    print("")
 
 
 def apply_action_and_wait_to_become_invalid(log_prefix, action_name, success_stat, device, config, state, utils, stats):
