@@ -1,5 +1,10 @@
 import tomlkit
-from fbmr.devices import StreamingAndroidDeviceConfig, WindowsAndroidDeviceConfig, WindowsAppDeviceConfig, all_device_config_parsers
+from fbmr.devices import (
+    StreamingAndroidDeviceConfig,
+    WindowsAndroidDeviceConfig,
+    WindowsAppDeviceConfig,
+    all_device_config_parsers,
+)
 
 
 def base_test_config_load(class_type, input_dict, input_string):
@@ -42,13 +47,13 @@ adb_serial = "AGSDKJDF"
 
 def test_windowsandroid_config_load():
     input_dict = {
-            "name": "s10h_window",
-            "type": "WindowsAndroidDevice",
-            "screenshot_size": [720, 350],
-            "adb_serial": "ASDFGH",
-            "window_crop_LTRB": [0, 0, 0, 0],
-            "window_title": "KLJ",
-        }
+        "name": "s10h_window",
+        "type": "WindowsAndroidDevice",
+        "screenshot_size": [720, 350],
+        "adb_serial": "ASDFGH",
+        "window_crop_LTRB": [0, 0, 0, 0],
+        "window_title": "KLJ",
+    }
     input_string = """name = "s10h_window"
 type = "WindowsAndroidDevice"
 screenshot_size = [720, 350]
@@ -62,12 +67,12 @@ window_title = "KLJ"
 
 def test_windowsapp_config_load():
     input_dict = {
-            "name": "s10h_window",
-            "type": "WindowsAppDevice",
-            "screenshot_size": [720, 350],
-            "window_crop_LTRB": [0, 0, 0, 0],
-            "window_title": "KLJ",
-        }
+        "name": "s10h_window",
+        "type": "WindowsAppDevice",
+        "screenshot_size": [720, 350],
+        "window_crop_LTRB": [0, 0, 0, 0],
+        "window_title": "KLJ",
+    }
     input_string = """name = "s10h_window"
 type = "WindowsAppDevice"
 screenshot_size = [720, 350]

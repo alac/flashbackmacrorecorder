@@ -11,11 +11,16 @@ class WindowsAndroidDevice(device.WindowsAppInterfaceDevice, device.ADBInterface
     - Android-aware version of WindowsAppDevice, that can be used in MacroRecorder.
     """
 
-    def __init__(self, capture_size, adb_flags, crop_settings=None, window_title_regexes=None):
+    def __init__(
+        self, capture_size, adb_flags, crop_settings=None, window_title_regexes=None
+    ):
         self.target_size = capture_size
         self.adbDevice = adb_alt_device.ADBAltDevice(self.target_size, adb_flags)
-        self.windows_app_device = windows_app_device.WindowsAppDevice(self.target_size, crop_settings=crop_settings,
-                                                                        window_title_regexes=window_title_regexes)
+        self.windows_app_device = windows_app_device.WindowsAppDevice(
+            self.target_size,
+            crop_settings=crop_settings,
+            window_title_regexes=window_title_regexes,
+        )
 
     @property
     def window_manager(self):

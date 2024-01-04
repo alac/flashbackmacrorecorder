@@ -14,8 +14,8 @@ class ADBAltDevice(device.ADBInterfaceDevice):
 
     def __init__(self, capture_size, adb_flags):
         self.adb_flags = adb_flags
-        assert '-s' in adb_flags
-        self.adb = adb.device(serial=adb_flags[adb_flags.index('-s') + 1])
+        assert "-s" in adb_flags
+        self.adb = adb.device(serial=adb_flags[adb_flags.index("-s") + 1])
         self._compute_size()
 
         if capture_size:
@@ -64,14 +64,14 @@ class ADBAltDevice(device.ADBInterfaceDevice):
         self.adb.app_start(app_bundle_id)
 
     def close_app(self, app_bundle_id):
-        self.adb.keyevent('KEYCODE_HOME')
+        self.adb.keyevent("KEYCODE_HOME")
         self.adb.app_stop(app_bundle_id)
 
     def press_back_button(self):
-        self.adb.keyevent('KEYCODE_BACK')
+        self.adb.keyevent("KEYCODE_BACK")
 
     def press_home_button(self):
-        self.adb.keyevent('KEYCODE_HOME')
+        self.adb.keyevent("KEYCODE_HOME")
 
     @classmethod
     def devices(cls):
@@ -79,7 +79,7 @@ class ADBAltDevice(device.ADBInterfaceDevice):
 
     @classmethod
     def get_screen_resolution(cls, serial):
-        device_info = adb.device(serial=serial).shell('wm size').splitlines()
+        device_info = adb.device(serial=serial).shell("wm size").splitlines()
         """
         Expected:
         Physical size: 1440x3040
@@ -88,8 +88,8 @@ class ADBAltDevice(device.ADBInterfaceDevice):
         physical_size = None
         override_size = None
         for size in device_info:
-            if b': ' in size:
-                wxh_str = size.split(b': ')[1].split(b'x')
+            if b": " in size:
+                wxh_str = size.split(b": ")[1].split(b"x")
                 w, h = int(wxh_str[0]), int(wxh_str[1])
 
                 if physical_size is None:
@@ -97,12 +97,12 @@ class ADBAltDevice(device.ADBInterfaceDevice):
                 if override_size is None:
                     override_size = (w, h)
 
-                if size.startswith(b'Physical'):
+                if size.startswith(b"Physical"):
                     physical_size = (w, h)
-                if size.startswith(b'Override'):
+                if size.startswith(b"Override"):
                     override_size = (w, h)
-        return {'physical_size': physical_size, 'override_size': override_size}
+        return {"physical_size": physical_size, "override_size": override_size}
 
     @classmethod
     def run_tcpip(cls, serial):
-        adb.device(serial=serial).shell('tcpip 5555').splitlines()
+        adb.device(serial=serial).shell("tcpip 5555").splitlines()

@@ -4,7 +4,11 @@ from PIL import Image
 from random import randint
 from typing import Optional, Callable, TypeAlias
 
-from fbmr.utils.detect_image import find_location_path_pil, find_location_multi_path_pil, pad_region
+from fbmr.utils.detect_image import (
+    find_location_path_pil,
+    find_location_multi_path_pil,
+    pad_region,
+)
 
 
 def variation() -> int:
@@ -64,7 +68,7 @@ def load_effect(e_data: dict, folder_path: str) -> Effect:
 
 
 class ClickRegionEffect(Effect):
-    def __init__(self, intended_region:  Optional[list[int, int, int, int]]):
+    def __init__(self, intended_region: Optional[list[int, int, int, int]]):
         super(ClickRegionEffect, self).__init__()
         self.intended_region = intended_region
 
@@ -84,13 +88,19 @@ class ClickRegionEffect(Effect):
     def apply(self, pil_image: Image, state_dict: dict, utils: dict):
         l, t, r, b = self.intended_region
         x, y = (l + r) / 2, (t + b) / 2
-        logging.getLogger("fbmr_logger").info(f"apply_effect {self.__class__.__name__} clicking at {x}, {y}")
+        logging.getLogger("fbmr_logger").info(
+            f"apply_effect {self.__class__.__name__} clicking at {x}, {y}"
+        )
         utils["device"].click(x + variation(), y + variation())
 
 
 class ClickSubimageEffect(Effect):
-    def __init__(self, image_path: str, intended_region:  Optional[list[int, int, int, int]],
-                 tap_coords_in_image: Optional[list[int, int]]):
+    def __init__(
+        self,
+        image_path: str,
+        intended_region: Optional[list[int, int, int, int]],
+        tap_coords_in_image: Optional[list[int, int]],
+    ):
         super(ClickSubimageEffect, self).__init__()
         self.image_path = image_path
         self.intended_region = intended_region
@@ -101,7 +111,7 @@ class ClickSubimageEffect(Effect):
         return ClickSubimageEffect(
             json_data.get("image_path"),
             json_data.get("intended_region", None),
-            json_data.get("tap_coords_in_image", None)
+            json_data.get("tap_coords_in_image", None),
         )
 
     def make_json(self) -> dict:
@@ -109,7 +119,7 @@ class ClickSubimageEffect(Effect):
             "type": "ClickSubimageEffect",
             "image_path": self.image_path,
             "intended_region": self.intended_region,
-            "tap_coords_in_image": self.tap_coords_in_image
+            "tap_coords_in_image": self.tap_coords_in_image,
         }
         return d
 
@@ -121,8 +131,7 @@ class ClickSubimageEffect(Effect):
             cropped_image = pil_image.crop(padded_region)
 
         a_image_path = self.adjust_file_path(self.image_path)
-        _strength, box = find_location_path_pil(
-            a_image_path, cropped_image)
+        _strength, box = find_location_path_pil(a_image_path, cropped_image)
         x, y, t_width, t_height = box
 
         if self.intended_region and padded_region:
@@ -135,11 +144,15 @@ class ClickSubimageEffect(Effect):
             x, y = (x + tx, y + ty)
         else:
             x, y = (x + t_width / 2, y + t_height / 2)
-        logging.getLogger("fbmr_logger").info(f"apply_effect {self.__class__.__name__} clicking at {x}, {y}")
+        logging.getLogger("fbmr_logger").info(
+            f"apply_effect {self.__class__.__name__} clicking at {x}, {y}"
+        )
         utils["device"].click(x + variation(), y + variation())
 
 
-RegionRegionTest: TypeAlias = Optional[Callable[[list[int, int, int, int], list[int, int, int, int]], bool]]
+RegionRegionTest: TypeAlias = Optional[
+    Callable[[list[int, int, int, int], list[int, int, int, int]], bool]
+]
 
 
 class ClickSubimageNearestEffect(Effect):
@@ -152,8 +165,9 @@ class ClickSubimageNearestEffect(Effect):
     apply() method is configurable via 'validate' property which will filter the "click" candidates.
     """
 
-    def __init__(self, match_path: str, click_path: str,
-                 validator: RegionRegionTest = None):
+    def __init__(
+        self, match_path: str, click_path: str, validator: RegionRegionTest = None
+    ):
         super(ClickSubimageNearestEffect, self).__init__()
         self.match_path = match_path
         self.click_path = click_path
@@ -162,9 +176,10 @@ class ClickSubimageNearestEffect(Effect):
     @property
     def validator(self) -> RegionRegionTest:
         """The validator takes in two bounding boxes (the found object and the candidate click object)
-        and returns a bool that determines whether to accept that candidate click object."""
+        and returns a bool that determines whether to accept that candidate click object.
+        """
         return self._validator
-    
+
     @validator.setter
     def validator(self, value: RegionRegionTest):
         self._validator = value
@@ -180,7 +195,7 @@ class ClickSubimageNearestEffect(Effect):
         d = {
             "type": "ClickSubimageNearestEffect",
             "match_path": self.match_path,
-            "click_path": self.click_path
+            "click_path": self.click_path,
         }
         return d
 
@@ -190,13 +205,13 @@ class ClickSubimageNearestEffect(Effect):
 
         # find the original location
         strength, original_box = find_location_path_pil(a_match_path, pil_image)
-        assert strength > .1
+        assert strength > 0.1
         x, y, t_width, t_height = original_box
         # remember the center
         original_x = x + t_width / 2
         original_y = y + t_height / 2
 
-        clickable_locations = find_location_multi_path_pil(a_click_path, pil_image, .5)
+        clickable_locations = find_location_multi_path_pil(a_click_path, pil_image, 0.5)
 
         best_location = None
         best_distance = None
@@ -206,7 +221,9 @@ class ClickSubimageNearestEffect(Effect):
             lx, ly, lw, lh = location_box
             lxc = lx + lw / 2
             lyc = ly + lh / 2
-            distance = (original_x - lxc) * (original_x - lxc) + (original_y - lyc) * (original_y - lyc)
+            distance = (original_x - lxc) * (original_x - lxc) + (original_y - lyc) * (
+                original_y - lyc
+            )
 
             if self._validator:
                 if not self._validator(original_box, location_box):
@@ -219,16 +236,21 @@ class ClickSubimageNearestEffect(Effect):
 
         if best_location is None:
             logging.getLogger("fbmr_logger").info(
-                f"apply_effect {self.__class__.__name__} failed to find a click location, giving up")
+                f"apply_effect {self.__class__.__name__} failed to find a click location, giving up"
+            )
             return
 
         x, y, t_width, t_height = best_location
         x, y = (x + t_width / 2, y + t_height / 2)
-        logging.getLogger("fbmr_logger").info(f"apply_effect {self.__class__.__name__} clicking at {x}, {y}")
+        logging.getLogger("fbmr_logger").info(
+            f"apply_effect {self.__class__.__name__} clicking at {x}, {y}"
+        )
         utils["device"].click(x + variation(), y + variation())
 
 
-def validator_common_vertical_range(region_a: list[int, int, int, int], region_b: list[int, int, int, int]) -> bool:
+def validator_common_vertical_range(
+    region_a: list[int, int, int, int], region_b: list[int, int, int, int]
+) -> bool:
     """
     For use with 'ClickSubimageNearestEffect'
     Checks for:
@@ -243,13 +265,17 @@ def validator_common_vertical_range(region_a: list[int, int, int, int], region_b
         _x1, _y1, _w1, _h1 = box1
         return (_y1 < py) and ((_y1 + _h1) > py)
 
-    return (box_contains_point(region_a, y2)
-            or box_contains_point(region_a, y2 + h2)
-            or box_contains_point(region_b, y1)
-            or box_contains_point(region_b, y1 + h1))
+    return (
+        box_contains_point(region_a, y2)
+        or box_contains_point(region_a, y2 + h2)
+        or box_contains_point(region_b, y1)
+        or box_contains_point(region_b, y1 + h1)
+    )
 
 
-def validator_common_horizontal_range(region_a: list[int, int, int, int], region_b: list[int, int, int, int]) -> bool:
+def validator_common_horizontal_range(
+    region_a: list[int, int, int, int], region_b: list[int, int, int, int]
+) -> bool:
     """
     For use with 'ClickSubimageNearestEffect'
     Checks for:
@@ -264,10 +290,12 @@ def validator_common_horizontal_range(region_a: list[int, int, int, int], region
         _x1, _y1, _w1, _h1 = box1
         return (_x1 < ph) and ((_x1 + _w1) > ph)
 
-    return (box_contains_point(region_a, x2)
-            or box_contains_point(region_a, x2 + w2)
-            or box_contains_point(region_b, x1)
-            or box_contains_point(region_b, x1 + w1))
+    return (
+        box_contains_point(region_a, x2)
+        or box_contains_point(region_a, x2 + w2)
+        or box_contains_point(region_b, x1)
+        or box_contains_point(region_b, x1 + w1)
+    )
 
 
 class ClickRelativeRegionEffect(Effect):
@@ -289,8 +317,11 @@ class ClickRelativeRegionEffect(Effect):
         )
 
     def make_json(self) -> dict:
-        d = {"type": "ClickRelativeRegionEffect", "click_image_path": self.click_image_path,
-             "scene_image_path": self.scene_image_path}
+        d = {
+            "type": "ClickRelativeRegionEffect",
+            "click_image_path": self.click_image_path,
+            "scene_image_path": self.scene_image_path,
+        }
         return d
 
     def apply(self, pil_image: Image, state_dict: dict, utils: dict):
@@ -299,9 +330,8 @@ class ClickRelativeRegionEffect(Effect):
 
         scene_image = Image.open(a_scene_image_path)
 
-        strength, box = find_location_path_pil(
-            a_click_image_path, scene_image)
-        assert strength > .1
+        strength, box = find_location_path_pil(a_click_image_path, scene_image)
+        assert strength > 0.1
         x, y, t_width, t_height = box
         x, y = (x + t_width / 2, y + t_height / 2)
 
@@ -311,7 +341,9 @@ class ClickRelativeRegionEffect(Effect):
         x = int(x * capture_size[0] / example_size[0])
         y = int(y * capture_size[1] / example_size[1])
 
-        logging.getLogger("fbmr_logger").info(f"apply_effect {self.__class__.__name__} clicking at {x}, {y}")
+        logging.getLogger("fbmr_logger").info(
+            f"apply_effect {self.__class__.__name__} clicking at {x}, {y}"
+        )
         utils["device"].click(x + variation(), y + variation())
 
 
@@ -320,9 +352,14 @@ class DragSubimageEffect(Effect):
     Drags from the location of 'image_path' in the screenshot, by a certain movement amount for some duration.
     """
 
-    def __init__(self, image_path: str, intended_region: Optional[list[int, int, int, int]],
-                 tap_coords_in_image: list[int, int],
-                 movement_amount: list[int, int], duration: float):
+    def __init__(
+        self,
+        image_path: str,
+        intended_region: Optional[list[int, int, int, int]],
+        tap_coords_in_image: list[int, int],
+        movement_amount: list[int, int],
+        duration: float,
+    ):
         super(DragSubimageEffect, self).__init__()
         self.image_path = image_path
         self.intended_region = intended_region
@@ -341,9 +378,14 @@ class DragSubimageEffect(Effect):
         )
 
     def make_json(self) -> dict:
-        d = {"type": "DragSubimageEffect", "image_path": self.image_path, "intended_region": self.intended_region,
-             "tap_coords_in_image": self.tap_coords_in_image, "movement_amount": self.movement_amount,
-             "duration": self.duration}
+        d = {
+            "type": "DragSubimageEffect",
+            "image_path": self.image_path,
+            "intended_region": self.intended_region,
+            "tap_coords_in_image": self.tap_coords_in_image,
+            "movement_amount": self.movement_amount,
+            "duration": self.duration,
+        }
         return d
 
     def apply(self, pil_image: Image, state_dict: dict, utils: dict):
@@ -354,9 +396,8 @@ class DragSubimageEffect(Effect):
             cropped_image = pil_image.crop(padded_region)
 
         a_image_path = self.adjust_file_path(self.image_path)
-        strength, box = find_location_path_pil(
-            a_image_path, cropped_image)
-        assert strength > .1
+        strength, box = find_location_path_pil(a_image_path, cropped_image)
+        assert strength > 0.1
         x, y, t_width, t_height = box
 
         if self.intended_region and padded_region:
@@ -373,8 +414,16 @@ class DragSubimageEffect(Effect):
         dx, dy = self.movement_amount
         x2, y2 = x + dx, y + dy
 
-        logging.getLogger("fbmr_logger").info(f"apply_effect {self.__class__.__name__} scroll {x}, {y} to {x2}, {y2}")
-        utils["device"].swipe(x + variation(), y + variation(), x2 + variation(), y2 + variation(), self.duration)
+        logging.getLogger("fbmr_logger").info(
+            f"apply_effect {self.__class__.__name__} scroll {x}, {y} to {x2}, {y2}"
+        )
+        utils["device"].swipe(
+            x + variation(),
+            y + variation(),
+            x2 + variation(),
+            y2 + variation(),
+            self.duration,
+        )
 
 
 class ScrollRegionEffect(Effect):
@@ -397,22 +446,30 @@ class ScrollRegionEffect(Effect):
         )
 
     def make_json(self) -> dict:
-        d = {"type": "ScrollRegionEffect", "image_path": self.image_path, "start": self.start, "end": self.end}
+        d = {
+            "type": "ScrollRegionEffect",
+            "image_path": self.image_path,
+            "start": self.start,
+            "end": self.end,
+        }
         return d
 
     def apply(self, pil_image: Image, state_dict: dict, utils: dict):
         a_image_path = self.adjust_file_path(self.image_path)
 
         # find the original location
-        strength, box = find_location_path_pil(
-            a_image_path, pil_image)
-        assert strength > .1
+        strength, box = find_location_path_pil(a_image_path, pil_image)
+        assert strength > 0.1
 
         x, y = get_location_from_name(self.start, box)
         x2, y2 = get_location_from_name(self.end, box)
 
-        logging.getLogger("fbmr_logger").info(f"apply_effect {self.__class__.__name__} scroll {x}, {y} to {x2}, {y2}")
-        utils["device"].swipe(x + variation(), y + variation(), x2 + variation(), y2 + variation(), 0)
+        logging.getLogger("fbmr_logger").info(
+            f"apply_effect {self.__class__.__name__} scroll {x}, {y} to {x2}, {y2}"
+        )
+        utils["device"].swipe(
+            x + variation(), y + variation(), x2 + variation(), y2 + variation(), 0
+        )
 
 
 class ScrollRelativeRegionEffect(Effect):
@@ -422,7 +479,9 @@ class ScrollRelativeRegionEffect(Effect):
     For situations where the scroll region varies visually (e.g. a table), but the behavior does not.
     """
 
-    def __init__(self, scroll_image_path: str, scene_image_path: str, start: str, end: str):
+    def __init__(
+        self, scroll_image_path: str, scene_image_path: str, start: str, end: str
+    ):
         super(ScrollRelativeRegionEffect, self).__init__()
         self.scroll_image_path = scroll_image_path
         self.scene_image_path = scene_image_path
@@ -439,8 +498,13 @@ class ScrollRelativeRegionEffect(Effect):
         )
 
     def make_json(self) -> dict:
-        d = {"type": "ScrollRelativeRegionEffect", "scroll_image_path": self.scroll_image_path,
-             "scene_image_path": self.scene_image_path, "start": self.start, "end": self.end}
+        d = {
+            "type": "ScrollRelativeRegionEffect",
+            "scroll_image_path": self.scroll_image_path,
+            "scene_image_path": self.scene_image_path,
+            "start": self.start,
+            "end": self.end,
+        }
         return d
 
     def apply(self, pil_image: Image, state_dict: dict, utils: dict):
@@ -449,9 +513,8 @@ class ScrollRelativeRegionEffect(Effect):
 
         scene_image = Image.open(a_scene_image_path)
 
-        strength, box = find_location_path_pil(
-            a_scroll_image_path, scene_image)
-        assert strength > .1
+        strength, box = find_location_path_pil(a_scroll_image_path, scene_image)
+        assert strength > 0.1
 
         start_x, start_y = get_location_from_name(self.start, box)
         end_x, end_y = get_location_from_name(self.end, box)
@@ -465,11 +528,17 @@ class ScrollRelativeRegionEffect(Effect):
         x2 = int(end_x * capture_size[0] / example_size[0])
         y2 = int(end_y * capture_size[1] / example_size[1])
 
-        logging.getLogger("fbmr_logger").info(f"apply_effect {self.__class__.__name__} scroll {x}, {y} to {x2}, {y2}")
-        utils["device"].swipe(x + variation(), y + variation(), x2 + variation(), y2 + variation(), 0)
+        logging.getLogger("fbmr_logger").info(
+            f"apply_effect {self.__class__.__name__} scroll {x}, {y} to {x2}, {y2}"
+        )
+        utils["device"].swipe(
+            x + variation(), y + variation(), x2 + variation(), y2 + variation(), 0
+        )
 
 
-def get_location_from_name(name: str, box: tuple[int, int, int, int]) -> tuple[int, int]:
+def get_location_from_name(
+    name: str, box: tuple[int, int, int, int]
+) -> tuple[int, int]:
     x, y, t_width, t_height = box
 
     if name == "top":

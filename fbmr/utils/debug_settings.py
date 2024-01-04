@@ -31,8 +31,12 @@ class DebugSettings:
         self.debug_folder = DEBUG_FOLDER
         self.log_folder = LOGS_FOLDER_ABSOLUTE
 
-        delete_stale_files_in_folder(self.debug_folder, settings.get_debug_image_expire_time())
-        delete_stale_files_in_folder(self.log_folder, settings.get_debug_log_expire_time())
+        delete_stale_files_in_folder(
+            self.debug_folder, settings.get_debug_image_expire_time()
+        )
+        delete_stale_files_in_folder(
+            self.log_folder, settings.get_debug_log_expire_time()
+        )
 
         initialize_logger()
 
@@ -44,7 +48,9 @@ class DebugSettings:
 
     def save_image_with_timestamp(self, image, suffix_filename):
         timestamp = datetime.datetime.now().strftime("%Y %B %d %A %I-%M-%S%p")
-        debug_image_name = os.path.join(debug_settings.debug_folder, f"{timestamp} - {suffix_filename}.png")
+        debug_image_name = os.path.join(
+            debug_settings.debug_folder, f"{timestamp} - {suffix_filename}.png"
+        )
         image.save(debug_image_name)
 
     def set_timeout_seconds(self, seconds):
@@ -52,7 +58,9 @@ class DebugSettings:
         self.timeout_duration = seconds
 
     def check_timeout(self):
-        if self.timeout_timestamp != 0 and time.time() > (self.timeout_timestamp + self.timeout_duration):
+        if self.timeout_timestamp != 0 and time.time() > (
+            self.timeout_timestamp + self.timeout_duration
+        ):
             raise GlobalTimeoutError(f"Timeout Exceeded {self.timeout_duration}")
 
     def clear_timeout(self):
@@ -62,10 +70,12 @@ class DebugSettings:
 
 def initialize_logger():
     current_time = datetime.datetime.now()
-    formatted_time = current_time.strftime('%Y-%m-%d_%H-%M-%S')
+    formatted_time = current_time.strftime("%Y-%m-%d_%H-%M-%S")
     filename = f"debug_{formatted_time}.log"
-    logging.config.fileConfig('logging.conf',
-                              defaults={'logfilename': os.path.join(LOGS_FOLDER_RELATIVE, filename)})
+    logging.config.fileConfig(
+        "logging.conf",
+        defaults={"logfilename": os.path.join(LOGS_FOLDER_RELATIVE, filename)},
+    )
 
 
 debug_settings = DebugSettings()
@@ -73,4 +83,3 @@ debug_settings = DebugSettings()
 
 class GlobalTimeoutError(Exception):
     pass
-

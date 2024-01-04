@@ -22,8 +22,10 @@ from PIL import ImageDraw, Image
 from fbmr.devices import all_device_constructors
 from fbmr.conditions import load_condition
 from fbmr.editor import ConfigUtil
-from fbmr.devicetypes.windows_app_device import transform_point_from_desktop_to_window, \
-    transform_point_from_window_to_target_size
+from fbmr.devicetypes.windows_app_device import (
+    transform_point_from_desktop_to_window,
+    transform_point_from_window_to_target_size,
+)
 from fbmr.devicetypes.device import WindowsAppInterfaceDevice
 from fbmr.utils.settings import settings
 
@@ -66,10 +68,12 @@ class ConfigRecorder:
             return
         self._config_json = data
         print("load_config: loaded json")
-        print(f"""####################### JSON BEGIN #######################
+        print(
+            f"""####################### JSON BEGIN #######################
 {self._config_json}
 ####################### JSON END #######################
-""")
+"""
+        )
 
         largest_id_no = 0
         escaped_prefix = re.escape(self._action_prefix)
@@ -104,24 +108,38 @@ class ConfigRecorder:
             # b. wait for the next action to become valid
             new_action_name = new_action_dict["name"]
             if self._actions_added:
-                last_action_dict = ConfigUtil.get_action_json(self._config_json, self._actions_added[-1])
+                last_action_dict = ConfigUtil.get_action_json(
+                    self._config_json, self._actions_added[-1]
+                )
                 last_action_dict["next_action_names"] = [new_action_name]
                 if self._last_action_added_time != 0:
-                    last_action_dict["cooldown"] = float(time.time() - self._last_action_added_time)
+                    last_action_dict["cooldown"] = float(
+                        time.time() - self._last_action_added_time
+                    )
                 folder_path = ConfigUtil.config_folder_path(self._config_name)
-                last_condition = load_condition(last_action_dict["conditions"][0], folder_path)
-                this_condition = load_condition(new_action_dict["conditions"][0], folder_path)
+                last_condition = load_condition(
+                    last_action_dict["conditions"][0], folder_path
+                )
+                this_condition = load_condition(
+                    new_action_dict["conditions"][0], folder_path
+                )
                 if not last_condition.is_valid(screenshot, {}, {}):
                     # If actionX's click image does not appear in actionX+1's screenshot
                     # Avoid advancing to X+1 until X's click image disappears
-                    print("using previous screenshots condition as an advanceIfCondition")
+                    print(
+                        "using previous screenshots condition as an advanceIfCondition"
+                    )
                     inverse_condition = last_action_dict["conditions"][0].copy()
                     inverse_condition["type"] = "NotSubimageCondition"
                     last_action_dict["advance_if_condition"] = inverse_condition
-                elif self._last_screenshot and not this_condition.is_valid(self._last_screenshot, {}, {}):
+                elif self._last_screenshot and not this_condition.is_valid(
+                    self._last_screenshot, {}, {}
+                ):
                     # If actionX+1's click image does not appear in actionX's screenshot
                     # Avoid advancing to X+1 until X's actionX+1's click image appears
-                    print("using current screenshots condition as an advanceIfCondition")
+                    print(
+                        "using current screenshots condition as an advanceIfCondition"
+                    )
                     next_condition_dict = new_action_dict["conditions"][0].copy()
                     last_action_dict["advance_if_condition"] = next_condition_dict
                 else:
@@ -144,17 +162,23 @@ class ConfigRecorder:
             return
 
         # normalize the size, so that we can check ratios "apples to apples"
-        norm_new_ss_size = ((new_ss_size[0] * old_ss_size[1]) / new_ss_size[1]), old_ss_size[1]
+        norm_new_ss_size = (
+            (new_ss_size[0] * old_ss_size[1]) / new_ss_size[1]
+        ), old_ss_size[1]
 
         ratio_old = float(old_ss_size[0]) / old_ss_size[1]
         ratio_new = float(new_ss_size[0]) / new_ss_size[1]
 
-        if abs(ratio_old - ratio_new) > .01:
-            print(f"Check your window size: current screenshot ratio {norm_new_ss_size} does not match old screenshot ratio {old_ss_size}")
+        if abs(ratio_old - ratio_new) > 0.01:
+            print(
+                f"Check your window size: current screenshot ratio {norm_new_ss_size} does not match old screenshot ratio {old_ss_size}"
+            )
 
 
 class ClickEvent:
-    def __init__(self, screenshot, position_in_target_xy, start_timestamp, device, is_right=False):
+    def __init__(
+        self, screenshot, position_in_target_xy, start_timestamp, device, is_right=False
+    ):
         self.screenshot = screenshot
         self.start_position_in_target_xy = position_in_target_xy
         self.start_timestamp = start_timestamp
@@ -172,7 +196,9 @@ class ClickEvent:
         ts = time.time()
         # get the position of the button
         x, y = win32api.GetCursorPos()
-        in_window, window_xy = transform_point_from_desktop_to_window(device.window_manager, (x, y))
+        in_window, window_xy = transform_point_from_desktop_to_window(
+            device.window_manager, (x, y)
+        )
         if not in_window:
             return None
 
@@ -180,23 +206,25 @@ class ClickEvent:
         screenshot = device.screen_capture()
 
         x, y = transform_point_from_window_to_target_size(
-            device.crop_settings,
-            (device.scale_x, device.scale_y),
-            window_xy)
+            device.crop_settings, (device.scale_x, device.scale_y), window_xy
+        )
         position_in_target_xy = (x, y)
         return ClickEvent(screenshot, position_in_target_xy, ts, device, is_right)
 
     def released(self):
         # get the position of the button
         x, y = win32api.GetCursorPos()
-        in_window, window_xy = transform_point_from_desktop_to_window(self.device.window_manager, (x, y))
+        in_window, window_xy = transform_point_from_desktop_to_window(
+            self.device.window_manager, (x, y)
+        )
         if not in_window:  # click cancelled
             return False
 
         x2, y2 = transform_point_from_window_to_target_size(
             self.device.crop_settings,
             (self.device.scale_x, self.device.scale_y),
-            window_xy)
+            window_xy,
+        )
         self.end_position_in_target_xy = (x2, y2)
         self.end_timestamp = time.time()
         return True
@@ -205,7 +233,10 @@ class ClickEvent:
         x, y = self.start_position_in_target_xy
         x2, y2 = self.end_position_in_target_xy
         duration = self.end_timestamp - self.start_timestamp
-        if DRAG_ENABLED and ((abs(x - x2) + abs(y - y2)) > CLICK_MAX_MOVEMENT or duration > CLICK_MAX_DURATION):
+        if DRAG_ENABLED and (
+            (abs(x - x2) + abs(y - y2)) > CLICK_MAX_MOVEMENT
+            or duration > CLICK_MAX_DURATION
+        ):
             self.commit_drag(config_recorder)
         else:
             self.commit_click(config_recorder)
@@ -224,8 +255,12 @@ class ClickEvent:
         cx = clamp(x, crop_x / 2, sc_width - crop_x / 2)
         cy = clamp(y, crop_y / 2, sc_height - crop_y / 2)
         # print(f"clamp xy {cx} {cy}")
-        crop_region = (float(cx - crop_x / 2), float(cy - crop_x / 2), float(cx + crop_x / 2),
-                       float(cy + crop_x / 2))
+        crop_region = (
+            float(cx - crop_x / 2),
+            float(cy - crop_x / 2),
+            float(cx + crop_x / 2),
+            float(cy + crop_x / 2),
+        )
         # print(f"crop region {crop_region}")
         sc_cropped = sc.crop(crop_region)
 
@@ -250,7 +285,7 @@ class ClickEvent:
                     "image_path": filename_region,
                     "threshold": 70,
                     "weight": 1.0,
-                    "intended_region": crop_region
+                    "intended_region": crop_region,
                 }
             ],
             "effects": [
@@ -258,10 +293,10 @@ class ClickEvent:
                     "type": "ClickSubimageEffect",
                     "image_path": filename_region,
                     "intended_region": crop_region,
-                    "tap_xy_in_image": tap_xy_in_image
+                    "tap_xy_in_image": tap_xy_in_image,
                 }
             ],
-            "is_enabled": True
+            "is_enabled": True,
         }
 
         config_recorder.write_config_with_new_action(new_action_dict, sc)
@@ -280,8 +315,12 @@ class ClickEvent:
         cx = clamp(x, crop_x / 2, sc_width - crop_x / 2)
         cy = clamp(y, crop_y / 2, sc_height - crop_y / 2)
         # print(f"clamp xy {cx} {cy}")
-        crop_region = (float(cx - crop_x / 2), float(cy - crop_y / 2), float(cx + crop_x / 2),
-                       float(cy + crop_y / 2))
+        crop_region = (
+            float(cx - crop_x / 2),
+            float(cy - crop_y / 2),
+            float(cx + crop_x / 2),
+            float(cy + crop_y / 2),
+        )
         # print(f"crop region {crop_region}")
         sc_cropped = sc.crop(crop_region)
 
@@ -296,7 +335,9 @@ class ClickEvent:
         sc_outline_draw.rectangle(crop_region, outline=(0, 255, 255, 127), width=3)
         sc_outline_np = np.array(sc_outline)
         x2, y2 = self.end_position_in_target_xy
-        sc_outline_np = cv2.arrowedLine(sc_outline_np, (x, y), (x2, y2), (255, 255, 0), 3)
+        sc_outline_np = cv2.arrowedLine(
+            sc_outline_np, (x, y), (x2, y2), (255, 255, 0), 3
+        )
         sc_outline = Image.fromarray(sc_outline_np)
         sc_outline.save(os.path.join(folder, filename_stem + "_outline.png"))
 
@@ -322,10 +363,10 @@ class ClickEvent:
                     # "intended_region":crop_region,
                     "tap_xy_in_image": tap_xy_in_image,
                     "movement_amount": movement_amount,
-                    "duration": duration
+                    "duration": duration,
                 }
             ],
-            "is_enabled": True
+            "is_enabled": True,
         }
 
         config_recorder.write_config_with_new_action(new_action_dict, sc)
@@ -333,12 +374,14 @@ class ClickEvent:
 
 def log_click(device, button_name):
     x, y = win32api.GetCursorPos()
-    in_window, window_xy = transform_point_from_desktop_to_window(device.window_manager, (x, y))
+    in_window, window_xy = transform_point_from_desktop_to_window(
+        device.window_manager, (x, y)
+    )
     base = f"{button_name} Pressed: {x}, {y}"
     if in_window:
-        print(f"{base} click in window at {window_xy}", end='\r', flush=True)
+        print(f"{base} click in window at {window_xy}", end="\r", flush=True)
     else:
-        print(f"{base} click not in window", end='\r', flush=True)
+        print(f"{base} click not in window", end="\r", flush=True)
 
 
 def consume_commit_events(q, config_recorder):
@@ -348,12 +391,19 @@ def consume_commit_events(q, config_recorder):
         q.task_done()
 
 
-def record_macro(config_name: str, device_name: str, action_prefix: str = "click",
-                 command_queue: Optional[Queue] = None, feedback_queue: Optional[Queue] = None):
+def record_macro(
+    config_name: str,
+    device_name: str,
+    action_prefix: str = "click",
+    command_queue: Optional[Queue] = None,
+    feedback_queue: Optional[Queue] = None,
+):
     print("Preparing to capture")
 
     d = all_device_constructors()[device_name]()
-    assert isinstance(d, WindowsAppInterfaceDevice), "MacroRecorder relies on reading data from a Windows application."
+    assert isinstance(
+        d, WindowsAppInterfaceDevice
+    ), "MacroRecorder relies on reading data from a Windows application."
     recorder = ConfigRecorder(config_name, d, action_prefix)
     recorder.create_or_load()
     recorder.check_screenshot_size(d)
@@ -395,7 +445,7 @@ def record_macro(config_name: str, device_name: str, action_prefix: str = "click
                     click_event = ClickEvent.start_event_if_click_in_window(d, False)
             elif not click_event.is_right:
                 if not left_click_down:
-                    print('Left Button Released', end='\r', flush=True)
+                    print("Left Button Released", end="\r", flush=True)
                     should_commit = click_event.released()
                     if should_commit:
                         if THREADING:
@@ -411,7 +461,7 @@ def record_macro(config_name: str, device_name: str, action_prefix: str = "click
                     click_event = ClickEvent.start_event_if_click_in_window(d, True)
             elif click_event.is_right:
                 if not right_click_down:
-                    print('Right Button Released', end='\r', flush=True)
+                    print("Right Button Released", end="\r", flush=True)
                     should_commit = click_event.released()
                     if should_commit:
                         if THREADING:
@@ -423,7 +473,11 @@ def record_macro(config_name: str, device_name: str, action_prefix: str = "click
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('config_name', help="The config we want to write to.", type=str)
-    parser.add_argument("device_name", help="the shorthand name for the device to use; specified in devices.py", type=str)
+    parser.add_argument("config_name", help="The config we want to write to.", type=str)
+    parser.add_argument(
+        "device_name",
+        help="the shorthand name for the device to use; specified in devices.py",
+        type=str,
+    )
     args = parser.parse_args()
     record_macro(args.config_name, args.device_name)

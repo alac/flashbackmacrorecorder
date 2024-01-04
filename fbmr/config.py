@@ -20,6 +20,7 @@ class Config:
 
     On disk, a Config is represented by a folder containing a 'config.json' and whatever images it might use.
     """
+
     def __init__(self, configs_root, name, create_if_missing=False):
         # type: (str, str, bool) -> None
         self.name = name
@@ -34,7 +35,9 @@ class Config:
 
         if not create_if_missing:
             if not os.path.exists(self.folder_path):
-                raise ValueError(f"Attempted to load a config that does not exist! {self.folder_path}")
+                raise ValueError(
+                    f"Attempted to load a config that does not exist! {self.folder_path}"
+                )
 
         # if the folder or json don't exist, create them
         assert os.path.isdir(configs_root)
@@ -55,15 +58,15 @@ class Config:
     def write(self):
         # type: () -> None
         data = self.make_json()
-        with open(self.json_path, 'w') as outfile:
+        with open(self.json_path, "w") as outfile:
             json.dump(data, outfile, ensure_ascii=False, sort_keys=True, indent=2)
 
     def load_json(self, json_blob):
         # type: (dict) -> None
-        self.confirmAll = json_blob.get('confirmAll', False)
-        self.screenshot_size = json_blob.get('screenshot_size', False)
+        self.confirmAll = json_blob.get("confirmAll", False)
+        self.screenshot_size = json_blob.get("screenshot_size", False)
         self.actions = []
-        for action_json in json_blob['actions']:
+        for action_json in json_blob["actions"]:
             name = action_json["name"]
             action = Action.load(action_json, self.folder_path)
             if name in self.actionsMap:
@@ -73,8 +76,12 @@ class Config:
 
     def make_json(self):
         # type: () -> dict
-        d = {'name': self.name, 'actions': [a.make_json() for a in self.actions], 'confirmAll': self.confirmAll,
-             'screenshot_size': self.screenshot_size}
+        d = {
+            "name": self.name,
+            "actions": [a.make_json() for a in self.actions],
+            "confirmAll": self.confirmAll,
+            "screenshot_size": self.screenshot_size,
+        }
         return d
 
     def add_action(self, action, temp=False):
@@ -92,8 +99,17 @@ class Config:
 
 
 class Action(object):
-    def __init__(self, name, conditions, effects, is_enabled, next_action_names, cooldown, advance_if_condition,
-                 folder_path):
+    def __init__(
+        self,
+        name,
+        conditions,
+        effects,
+        is_enabled,
+        next_action_names,
+        cooldown,
+        advance_if_condition,
+        folder_path,
+    ):
         # type: (str, list[Condition], list[Effect], bool, list[str], float, Optional[Condition], str) -> None
         self.name = name
         self.conditions = conditions  # condition objects
@@ -114,38 +130,43 @@ class Action(object):
 
     def make_json(self):
         # type: () -> dict
-        d = {'name': self.name, 'conditions': [c.make_json() for c in self.conditions],
-             'effects': [e.make_json() for e in self.effects], 'is_enabled': self.is_enabled,
-             'next_action_names': self.next_action_names, 'cooldown': self.cooldown}
+        d = {
+            "name": self.name,
+            "conditions": [c.make_json() for c in self.conditions],
+            "effects": [e.make_json() for e in self.effects],
+            "is_enabled": self.is_enabled,
+            "next_action_names": self.next_action_names,
+            "cooldown": self.cooldown,
+        }
         if self.advance_if_condition:
-            d['advance_if_condition'] = self.advance_if_condition.make_json()
+            d["advance_if_condition"] = self.advance_if_condition.make_json()
         return d
 
     @staticmethod
     def load(json_data, folder_path):
         # type: (dict, str) -> Action
         conditions = []
-        for c_data in json_data['conditions']:
+        for c_data in json_data["conditions"]:
             conditions.append(load_condition(c_data, folder_path))
 
         effects = []
-        for e_data in json_data['effects']:
+        for e_data in json_data["effects"]:
             effects.append(load_effect(e_data, folder_path))
 
-        adv_if_data = json_data.get('advance_if_condition', None)
+        adv_if_data = json_data.get("advance_if_condition", None)
         advance_if_condition = None
         if adv_if_data is not None:
             advance_if_condition = load_condition(adv_if_data, folder_path)
 
         return Action(
-            json_data['name'],
+            json_data["name"],
             conditions,
             effects,
-            json_data['is_enabled'],
-            json_data.get('next_action_names', []),
-            json_data.get('cooldown', 0),
+            json_data["is_enabled"],
+            json_data.get("next_action_names", []),
+            json_data.get("cooldown", 0),
             advance_if_condition,
-            folder_path
+            folder_path,
         )
 
     def find_valid_rect(self, pil_image, state_dict, utils):
@@ -165,7 +186,9 @@ class Action(object):
                 min_validity = validity
                 min_rect = rect
         if len(self.conditions) > 0:
-            logging.getLogger("fbmr_logger").debug(f"Checking action {self.name}: final score {int(min_validity)}")
+            logging.getLogger("fbmr_logger").debug(
+                f"Checking action {self.name}: final score {int(min_validity)}"
+            )
         return min_validity, min_rect
 
     def is_valid(self, pil_image, state_dict, utils):

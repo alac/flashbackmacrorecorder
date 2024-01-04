@@ -1,5 +1,5 @@
-import time
 import logging
+import time
 
 
 def time_str(seconds):
@@ -31,7 +31,9 @@ def sleep_countdown(duration, interval=1.0):
     print("")
 
 
-def apply_action_and_wait_to_become_invalid(log_prefix, action_name, success_stat, device, config, state, utils, stats):
+def apply_action_and_wait_to_become_invalid(
+    log_prefix, action_name, success_stat, device, config, state, utils, stats
+):
     """
     Apply the given action and wait until it becomes invalid.
 
@@ -45,13 +47,14 @@ def apply_action_and_wait_to_become_invalid(log_prefix, action_name, success_sta
     """
     clicked = False
     while True:
-        time.sleep(.5)
+        time.sleep(0.5)
         image = device.screen_capture()
         action = config.get_action(action_name)
         viability = action.is_valid(image, state, utils)
 
         logging.getLogger("fbmr_logger").debug(
-            f"{log_prefix}: checking ", action.name, " viability ", viability)
+            f"{log_prefix}: checking ", action.name, " viability ", viability
+        )
         if viability == 0 and not clicked:
             # waiting for the action to become valid
             continue
@@ -66,8 +69,17 @@ def apply_action_and_wait_to_become_invalid(log_prefix, action_name, success_sta
             return
 
 
-def apply_action_and_wait_for_next_action(log_prefix, action_name, next_action_name, success_stat, device, config,
-                                          state, utils, stats):
+def apply_action_and_wait_for_next_action(
+    log_prefix,
+    action_name,
+    next_action_name,
+    success_stat,
+    device,
+    config,
+    state,
+    utils,
+    stats,
+):
     """
     Apply the given action and wait for the next action to become valid.
 
@@ -86,13 +98,14 @@ def apply_action_and_wait_for_next_action(log_prefix, action_name, next_action_n
     """
     clicked = False
     while True:
-        time.sleep(.5)
+        time.sleep(0.5)
         image = device.screen_capture()
         action = config.get_action(action_name)
         viability = action.is_valid(image, state, utils)
 
         logging.getLogger("fbmr_logger").debug(
-            f"{log_prefix}: checking ", action.name, " viability ", viability)
+            f"{log_prefix}: checking ", action.name, " viability ", viability
+        )
         if viability == 0 and not clicked:
             # waiting for the action to become valid
             continue
@@ -108,7 +121,9 @@ def apply_action_and_wait_for_next_action(log_prefix, action_name, next_action_n
                 return
 
 
-def hammer_back_button_until_action_viable(action_name, device, config, state, utils, stats):
+def hammer_back_button_until_action_viable(
+    action_name, device, config, state, utils, stats
+):
     """
     Example cases:
     1. Opening the app causes dialogs to appear (that can be dismissed with BACK).
@@ -127,4 +142,4 @@ def hammer_back_button_until_action_viable(action_name, device, config, state, u
             seen += 1
             if seen > 10:  # 5 seconds of just the home screen
                 break
-        time.sleep(.5)
+        time.sleep(0.5)

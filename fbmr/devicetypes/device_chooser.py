@@ -11,12 +11,17 @@ class ADBInterface:
 
     @classmethod
     def devices(cls):
-        return [str(dev.split(b'\t')[0])[2:-1] for dev in subprocess.check_output(['adb', 'devices']).splitlines() if
-                dev.endswith(b'\tdevice')]
+        return [
+            str(dev.split(b"\t")[0])[2:-1]
+            for dev in subprocess.check_output(["adb", "devices"]).splitlines()
+            if dev.endswith(b"\tdevice")
+        ]
 
     @classmethod
     def get_screen_resolution(cls, serial):
-        device_info = subprocess.check_output(['adb', '-s', f'{serial}', 'shell', 'wm size']).splitlines()
+        device_info = subprocess.check_output(
+            ["adb", "-s", f"{serial}", "shell", "wm size"]
+        ).splitlines()
         """
         Expected:
         Physical size: 1440x3040
@@ -25,8 +30,8 @@ class ADBInterface:
         physical_size = None
         override_size = None
         for size in device_info:
-            if b': ' in size:
-                wxh_str = size.split(b': ')[1].split(b'x')
+            if b": " in size:
+                wxh_str = size.split(b": ")[1].split(b"x")
                 w, h = int(wxh_str[0]), int(wxh_str[1])
 
                 if physical_size is None:
@@ -42,7 +47,7 @@ class ADBInterface:
 
     @classmethod
     def run_tcpip(cls, serial):
-        subprocess.check_output(['adb', '-s', f'{serial}', 'tcpip', "5555"])
+        subprocess.check_output(["adb", "-s", f"{serial}", "tcpip", "5555"])
 
 
 def exit_app():
@@ -66,7 +71,7 @@ def pick_android_device(window_title, completion_callback):
     def load_window():
         row = 0
 
-        run_button = tkinter.Button(window, text='Reload', command=reload_window)
+        run_button = tkinter.Button(window, text="Reload", command=reload_window)
         run_button.grid(row=row, column=0, sticky="w")
 
         row += 1
@@ -74,7 +79,9 @@ def pick_android_device(window_title, completion_callback):
         attached_devices = ADBInterface.devices()
 
         if not attached_devices:
-            run_button = tkinter.Button(window, text='Error: No device detected', command=exit_app)
+            run_button = tkinter.Button(
+                window, text="Error: No device detected", command=exit_app
+            )
             run_button.grid(row=row, column=0, sticky="w")
 
             return
@@ -82,15 +89,17 @@ def pick_android_device(window_title, completion_callback):
         # append true resolutions
         descriptive_devices = []
         for device in attached_devices:
-            size = ADBInterface.get_screen_resolution(device)['override_size']
+            size = ADBInterface.get_screen_resolution(device)["override_size"]
             descriptive_devices.append(f"{device} {size}")
 
-        tkinter.Label(window, text="Device").grid(row=row, sticky='w')
+        tkinter.Label(window, text="Device").grid(row=row, sticky="w")
         device_variable = tkinter.StringVar(window)
         if attached_devices:
             device_variable.set(descriptive_devices[0])  # default value
-        device_dropdown = tkinter.OptionMenu(window, device_variable, *descriptive_devices)
-        device_dropdown.grid(row=row, column=1, sticky='nesw')
+        device_dropdown = tkinter.OptionMenu(
+            window, device_variable, *descriptive_devices
+        )
+        device_dropdown.grid(row=row, column=1, sticky="nesw")
 
         row += 1
 
@@ -105,9 +114,9 @@ def pick_android_device(window_title, completion_callback):
             time.sleep(5)  # give device time to connect
             reload_window()
 
-        run_button = tkinter.Button(window, text='Start', command=start)
+        run_button = tkinter.Button(window, text="Start", command=start)
         run_button.grid(row=row, column=0, sticky="w")
-        run_button = tkinter.Button(window, text='Enable Wifi', command=run_tcpip)
+        run_button = tkinter.Button(window, text="Enable Wifi", command=run_tcpip)
         run_button.grid(row=row, column=1, sticky="w")
 
         window.protocol("WM_DELETE_WINDOW", exit_app)
@@ -132,7 +141,7 @@ def pick_application_window(window_title, completion_callback):
     def load_window():
         row = 0
 
-        run_button = tkinter.Button(window, text='Reload', command=reload_window)
+        run_button = tkinter.Button(window, text="Reload", command=reload_window)
         run_button.grid(row=row, column=0, sticky="w")
 
         row += 1
@@ -141,17 +150,21 @@ def pick_application_window(window_title, completion_callback):
         window_titles = window_manager.all_window_titles()
 
         if not window_titles:
-            run_button = tkinter.Button(window, text='Error: Failed to detect windows', command=exit_app)
+            run_button = tkinter.Button(
+                window, text="Error: Failed to detect windows", command=exit_app
+            )
             run_button.grid(row=row, column=0, sticky="w")
 
             return
 
-        tkinter.Label(window, text="Device").grid(row=row, sticky='w')
+        tkinter.Label(window, text="Device").grid(row=row, sticky="w")
         selected_title_variable = tkinter.StringVar(window)
         if window_titles:
             selected_title_variable.set(window_titles[0])  # default value
-        device_dropdown = tkinter.OptionMenu(window, selected_title_variable, *window_titles)
-        device_dropdown.grid(row=row, column=1, sticky='nesw')
+        device_dropdown = tkinter.OptionMenu(
+            window, selected_title_variable, *window_titles
+        )
+        device_dropdown.grid(row=row, column=1, sticky="nesw")
 
         row += 1
 
@@ -160,7 +173,7 @@ def pick_application_window(window_title, completion_callback):
             window.destroy()
             completion_callback(selected_title)
 
-        run_button = tkinter.Button(window, text='Start', command=start)
+        run_button = tkinter.Button(window, text="Start", command=start)
         run_button.grid(row=row, column=0, sticky="w")
 
         window.protocol("WM_DELETE_WINDOW", exit_app)

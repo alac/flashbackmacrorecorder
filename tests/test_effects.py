@@ -1,10 +1,18 @@
-from fbmr.effects import ClickSubimageEffect, ClickSubimageNearestEffect, validator_common_vertical_range, \
-    validator_common_horizontal_range, ClickRelativeRegionEffect, DragSubimageEffect, ScrollRegionEffect, \
-    ScrollRelativeRegionEffect
+from fbmr.effects import (
+    ClickSubimageEffect,
+    ClickSubimageNearestEffect,
+    validator_common_vertical_range,
+    validator_common_horizontal_range,
+    ClickRelativeRegionEffect,
+    DragSubimageEffect,
+    ScrollRegionEffect,
+    ScrollRelativeRegionEffect,
+)
 
 from PIL import Image
 
 from fbmr import effects
+
 effects.variation = lambda: 0
 
 TESTDATA_COND = "tests/test_data_effect/"
@@ -24,11 +32,7 @@ class MockDevice(object):
 
 
 def test_ClickSubimageEffect():
-    effect = ClickSubimageEffect(
-        TESTDATA_COND + "button.png",
-        None,
-        None
-    )
+    effect = ClickSubimageEffect(TESTDATA_COND + "button.png", None, None)
 
     # test jsonification
     json_data = effect.make_json()
@@ -63,31 +67,47 @@ def test_ClickSubimageEffect():
 def test_ClickSubimageNearestEffect():
     device = MockDevice()
 
-    effect = ClickSubimageNearestEffect(match_path=TESTDATA_COND + "button.png",
-                                        click_path=TESTDATA_COND + "button.png", validator=None)
+    effect = ClickSubimageNearestEffect(
+        match_path=TESTDATA_COND + "button.png",
+        click_path=TESTDATA_COND + "button.png",
+        validator=None,
+    )
     effect.apply(Image.open(TESTDATA_COND + "contained.png"), {}, {"device": device})
     x, y = device.last_args
     assert abs(823.0 - x) < 10.0 and abs(1053.0 - y) < 10.0
 
-    effect = ClickSubimageNearestEffect(match_path=TESTDATA_COND + "button.png",
-                                        click_path=TESTDATA_COND + "nearest_click.png", validator=None)
-    effect.apply(Image.open(TESTDATA_COND + "nearest_search.png"), {}, {"device": device})
+    effect = ClickSubimageNearestEffect(
+        match_path=TESTDATA_COND + "button.png",
+        click_path=TESTDATA_COND + "nearest_click.png",
+        validator=None,
+    )
+    effect.apply(
+        Image.open(TESTDATA_COND + "nearest_search.png"), {}, {"device": device}
+    )
     device.print()
     x, y = device.last_args
     assert abs(551.0 - x) < 10.0 and abs(852.0 - y) < 10.0
 
-    effect = ClickSubimageNearestEffect(match_path=TESTDATA_COND + "button.png",
-                                        click_path=TESTDATA_COND + "nearest_click.png",
-                                        validator=validator_common_horizontal_range)
-    effect.apply(Image.open(TESTDATA_COND + "nearest_search.png"), {}, {"device": device})
+    effect = ClickSubimageNearestEffect(
+        match_path=TESTDATA_COND + "button.png",
+        click_path=TESTDATA_COND + "nearest_click.png",
+        validator=validator_common_horizontal_range,
+    )
+    effect.apply(
+        Image.open(TESTDATA_COND + "nearest_search.png"), {}, {"device": device}
+    )
     device.print()
     x, y = device.last_args
     assert abs(802.0 - x) < 10.0 and abs(560.0 - y) < 10.0
 
-    effect = ClickSubimageNearestEffect(match_path=TESTDATA_COND + "button.png",
-                                        click_path=TESTDATA_COND + "nearest_click.png",
-                                        validator=validator_common_vertical_range)
-    effect.apply(Image.open(TESTDATA_COND + "nearest_search.png"), {}, {"device": device})
+    effect = ClickSubimageNearestEffect(
+        match_path=TESTDATA_COND + "button.png",
+        click_path=TESTDATA_COND + "nearest_click.png",
+        validator=validator_common_vertical_range,
+    )
+    effect.apply(
+        Image.open(TESTDATA_COND + "nearest_search.png"), {}, {"device": device}
+    )
     device.print()
     x, y = device.last_args
     assert abs(69.0 - x) < 10.0 and abs(1031.0 - y) < 10.0
@@ -111,8 +131,10 @@ def test_ClickSubimageNearestEffectValidators():
 def test_ClickRelativeRegionEffect():
     device = MockDevice()
 
-    effect = ClickRelativeRegionEffect(scene_image_path=TESTDATA_COND + "contained.png",
-                                       click_image_path=TESTDATA_COND + "button.png")
+    effect = ClickRelativeRegionEffect(
+        scene_image_path=TESTDATA_COND + "contained.png",
+        click_image_path=TESTDATA_COND + "button.png",
+    )
     effect.apply(Image.open(TESTDATA_COND + "contained.png"), {}, {"device": device})
     x, y = device.last_args
     assert abs(823.0 - x) < 10.0 and abs(1053.0 - y) < 10.0
@@ -120,25 +142,41 @@ def test_ClickRelativeRegionEffect():
 
 def test_DragSubimageEffect():
     device = MockDevice()
-    effect = DragSubimageEffect(image_path=TESTDATA_COND + "button.png", intended_region=None,
-                                tap_coords_in_image=[0, 0], movement_amount=[5, 5], duration=5)
+    effect = DragSubimageEffect(
+        image_path=TESTDATA_COND + "button.png",
+        intended_region=None,
+        tap_coords_in_image=[0, 0],
+        movement_amount=[5, 5],
+        duration=5,
+    )
     effect.apply(Image.open(TESTDATA_COND + "contained.png"), {}, {"device": device})
     assert device.last_args == [721, 1026, 726, 1031, 5]
 
     device = MockDevice()
-    effect = DragSubimageEffect(image_path=TESTDATA_COND + "nearest_click.png", intended_region=[600, 100, 1000, 400],
-                                tap_coords_in_image=[0, 0], movement_amount=[5, 5], duration=5)
-    effect.apply(Image.open(TESTDATA_COND + "nearest_search.png"), {}, {"device": device})
+    effect = DragSubimageEffect(
+        image_path=TESTDATA_COND + "nearest_click.png",
+        intended_region=[600, 100, 1000, 400],
+        tap_coords_in_image=[0, 0],
+        movement_amount=[5, 5],
+        duration=5,
+    )
+    effect.apply(
+        Image.open(TESTDATA_COND + "nearest_search.png"), {}, {"device": device}
+    )
     assert device.last_args == [751, 209, 756, 214, 5]
 
 
 def test_ScrollRegionEffect():
     device = MockDevice()
-    effect = ScrollRegionEffect(image_path=TESTDATA_COND + "button.png", start="left", end="right")
+    effect = ScrollRegionEffect(
+        image_path=TESTDATA_COND + "button.png", start="left", end="right"
+    )
     effect.apply(Image.open(TESTDATA_COND + "contained.png"), {}, {"device": device})
     assert device.last_args == [721, 1055, 825, 1055, 0]
 
-    effect = ScrollRegionEffect(image_path=TESTDATA_COND + "button.png", start="top", end="bottom")
+    effect = ScrollRegionEffect(
+        image_path=TESTDATA_COND + "button.png", start="top", end="bottom"
+    )
     effect.apply(Image.open(TESTDATA_COND + "contained.png"), {}, {"device": device})
     device.print()
     assert device.last_args == [825, 1026, 825, 1084, 0]
@@ -146,11 +184,21 @@ def test_ScrollRegionEffect():
 
 def test_ScrollRelativeRegionEffect():
     device = MockDevice()
-    effect = ScrollRelativeRegionEffect(scroll_image_path=TESTDATA_COND + "button.png", scene_image_path=TESTDATA_COND + "contained.png", start="left", end="right")
+    effect = ScrollRelativeRegionEffect(
+        scroll_image_path=TESTDATA_COND + "button.png",
+        scene_image_path=TESTDATA_COND + "contained.png",
+        start="left",
+        end="right",
+    )
     effect.apply(Image.open(TESTDATA_COND + "contained.png"), {}, {"device": device})
     assert device.last_args == [721, 1055, 825, 1055, 0]
 
-    effect = ScrollRelativeRegionEffect(scroll_image_path=TESTDATA_COND + "button.png", scene_image_path=TESTDATA_COND + "contained.png", start="top", end="bottom")
+    effect = ScrollRelativeRegionEffect(
+        scroll_image_path=TESTDATA_COND + "button.png",
+        scene_image_path=TESTDATA_COND + "contained.png",
+        start="top",
+        end="bottom",
+    )
     effect.apply(Image.open(TESTDATA_COND + "contained.png"), {}, {"device": device})
     device.print()
     assert device.last_args == [825, 1026, 825, 1084, 0]

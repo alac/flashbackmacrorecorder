@@ -22,9 +22,12 @@ def log(message: str):
 
 class WindowsAppDevice(device.WindowsAppInterfaceDevice):
     """WindowsAppDevice communicates with a running Windows application via WINDOWS apis to capture and click.
-    Uses windll.user32.PrintWindow, which relies on _the app_ implementing screenshot behavior."""
+    Uses windll.user32.PrintWindow, which relies on _the app_ implementing screenshot behavior.
+    """
 
-    def __init__(self, target_size=(720, 1280), crop_settings=None, window_title_regexes=None):
+    def __init__(
+        self, target_size=(720, 1280), crop_settings=None, window_title_regexes=None
+    ):
         """
         crop_settings = (left, top, right, bottom) relative to their own edge instead of
             being TOP-LEFT and BOTTOM-RIGHT points relative to the TOP-LEFT corner.
@@ -89,7 +92,8 @@ class WindowsAppDevice(device.WindowsAppInterfaceDevice):
 
     def _compute_size(self):
         self._scale_x, self._scale_y, im = screenshot_window(
-            self._window_manager, self.target_size, crop_settings=self.crop_settings)
+            self._window_manager, self.target_size, crop_settings=self.crop_settings
+        )
 
     def recompute_size(self):
         self._compute_size()
@@ -106,7 +110,8 @@ class WindowsAppDevice(device.WindowsAppInterfaceDevice):
     def screen_capture(self):
         # type: () -> Image
         self._scale_x, self._scale_y, im = screenshot_window(
-            self._window_manager, self.target_size, crop_settings=self._crop_settings)
+            self._window_manager, self.target_size, crop_settings=self._crop_settings
+        )
         return im
 
     def warn_if_screenshot_has_borders(self):
@@ -115,28 +120,35 @@ class WindowsAppDevice(device.WindowsAppInterfaceDevice):
         if crop_settings != (0, 0, 0, 0):
             logging.getLogger("fbmr_logger").warning(
                 f"WARNING: screenshot has black borders\nScreenshots may be inaccurate.\nBorders detected (left, top, "
-                f"right, bottom) {crop_settings}")
+                f"right, bottom) {crop_settings}"
+            )
             return True
         return False
 
     def click(self, x, y):
         # type: (int, int) -> None
         """x and y are from the top corner"""
-        py_click(self._window_manager, (x, y), self._crop_settings,
-                 (self._scale_x, self._scale_y))
+        py_click(
+            self._window_manager,
+            (x, y),
+            self._crop_settings,
+            (self._scale_x, self._scale_y),
+        )
 
     def swipe(self, x, y, x2, y2, duration):
         # type: (int, int, int, int, float) -> None
-        py_swipe(self._window_manager, (x, y), (x2, y2), duration, self._crop_settings,
-                 (self._scale_x, self._scale_y))
+        py_swipe(
+            self._window_manager,
+            (x, y),
+            (x2, y2),
+            duration,
+            self._crop_settings,
+            (self._scale_x, self._scale_y),
+        )
 
 
-def transform_point_to_window(
-        crop_settings,
-        scale_xy,
-        point_xy
-):
-    """ Transforms a point from the 'target_size' coordinate system to app window.
+def transform_point_to_window(crop_settings, scale_xy, point_xy):
+    """Transforms a point from the 'target_size' coordinate system to app window.
     E.g. (0, 0) would be the TOP LEFT of the app window.
     """
     x, y = point_xy
@@ -151,11 +163,11 @@ def transform_point_to_window(
 
 
 def transform_point_from_desktop_to_window(
-        window_manager,
-        point_xy,
+    window_manager,
+    point_xy,
 ):
-    """ Transforms a point from desktop coordinates to window coordinates.
-    Checks if window is focused.    
+    """Transforms a point from desktop coordinates to window coordinates.
+    Checks if window is focused.
     @return: (bool 'was in window', (x, y) point)
     """
     x, y = point_xy
@@ -164,7 +176,9 @@ def transform_point_from_desktop_to_window(
     cx, cy = win32gui.ScreenToClient(w.window_handle, (x, y))
     # x2, y2 = win32gui.ClientToScreen(w._handle, (cx, cy))
 
-    left, top, right, bot = win32gui.GetClientRect(w.window_handle)  # handles title bar/borders
+    left, top, right, bot = win32gui.GetClientRect(
+        w.window_handle
+    )  # handles title bar/borders
     if cx < left or cx > right:
         return False, (0, 0)
     if cy < top or cy > bot:
@@ -175,9 +189,9 @@ def transform_point_from_desktop_to_window(
 
 
 def transform_point_from_window_to_target_size(
-        crop_settings,
-        scale_xy,
-        window_xy,
+    crop_settings,
+    scale_xy,
+    window_xy,
 ):
     wx, wy = window_xy
     left, top, right, bottom = crop_settings
@@ -292,7 +306,9 @@ def screenshot_window(
     save_bitmap = win32ui.CreateBitmap()
     save_bitmap.CreateCompatibleBitmap(mfc_dc, width, height)
     save_dc.SelectObject(save_bitmap)
-    result = windll.user32.PrintWindow(hwnd, save_dc.GetSafeHdc(), PW_CLIENTONLY | PW_RENDERFULLCONTENT)
+    result = windll.user32.PrintWindow(
+        hwnd, save_dc.GetSafeHdc(), PW_CLIENTONLY | PW_RENDERFULLCONTENT
+    )
 
     bmp_info = save_bitmap.GetInfo()
     bmp_str = save_bitmap.GetBitmapBits(True)
@@ -349,9 +365,13 @@ def infer_cropping_and_check(image, target_size):
     nw = w - l - r
     nh = h - t - b
 
-    log("crop ratios {0} desired {1}".format((float(nw) / nh), float(target_size[0]) / target_size[1]))
+    log(
+        "crop ratios {0} desired {1}".format(
+            (float(nw) / nh), float(target_size[0]) / target_size[1]
+        )
+    )
 
-    if abs((float(nw) / nh) - float(target_size[0]) / target_size[1]) > .04:
+    if abs((float(nw) / nh) - float(target_size[0]) / target_size[1]) > 0.04:
         log(f"Crop did not have desired ratio:, ({l}, {t}, {r}, {b})")
         return 0, 0, 0, 0
     return l, t, r, b
@@ -362,7 +382,7 @@ def infer_cropping(image, has_window_border=False):
     returns the top-left and bottom-right coordinates of the rectangle
     (left, top, right, bottom)
     """
-    rgb_image = image.convert('RGB')
+    rgb_image = image.convert("RGB")
     w, h = rgb_image.size
 
     blackness = 1
@@ -427,48 +447,60 @@ def infer_cropping(image, has_window_border=False):
     try:
         if has_window_border:
             top = find_z_from_a_to_b_with_delta(
-                is_black, top_center, center_center, (0, 1))
+                is_black, top_center, center_center, (0, 1)
+            )
             top = find_z_from_a_to_b_with_delta(
-                is_not_black, top, center_center, (0, 1))
+                is_not_black, top, center_center, (0, 1)
+            )
         else:
             top = find_z_from_a_to_b_with_delta(
-                is_not_black, top_center, center_center, (0, 1))
+                is_not_black, top_center, center_center, (0, 1)
+            )
     except ValueError:
         top = top_center
 
     try:
         if has_window_border:
             left = find_z_from_a_to_b_with_delta(
-                is_black, left_center, center_center, (1, 0))
+                is_black, left_center, center_center, (1, 0)
+            )
             left = find_z_from_a_to_b_with_delta(
-                is_not_black, left, center_center, (1, 0))
+                is_not_black, left, center_center, (1, 0)
+            )
         else:
             left = find_z_from_a_to_b_with_delta(
-                is_not_black, left_center, center_center, (1, 0))
+                is_not_black, left_center, center_center, (1, 0)
+            )
     except ValueError:
         left = left_center
 
     try:
         if has_window_border:
             right = find_z_from_a_to_b_with_delta(
-                is_black, right_center, center_center, (-1, 0))
+                is_black, right_center, center_center, (-1, 0)
+            )
             right = find_z_from_a_to_b_with_delta(
-                is_not_black, right, center_center, (-1, 0))
+                is_not_black, right, center_center, (-1, 0)
+            )
         else:
             right = find_z_from_a_to_b_with_delta(
-                is_not_black, right_center, center_center, (-1, 0))
+                is_not_black, right_center, center_center, (-1, 0)
+            )
     except ValueError:
         right = right_center
 
     try:
         if has_window_border:
             bottom = find_z_from_a_to_b_with_delta(
-                is_black, bottom_center, center_center, (0, -1))
+                is_black, bottom_center, center_center, (0, -1)
+            )
             bottom = find_z_from_a_to_b_with_delta(
-                is_not_black, bottom, center_center, (0, -1))
+                is_not_black, bottom, center_center, (0, -1)
+            )
         else:
             bottom = find_z_from_a_to_b_with_delta(
-                is_not_black, bottom_center, center_center, (0, -1))
+                is_not_black, bottom_center, center_center, (0, -1)
+            )
     except ValueError:
         bottom = bottom_center
 
@@ -489,7 +521,9 @@ def get_client_window_relative_to_screen(hwnd):
     )
 
 
-def preimage_touch_to_screen_touch(preimage_touch, dpi_scale, left, top, _right, _bottom):
+def preimage_touch_to_screen_touch(
+    preimage_touch, dpi_scale, left, top, _right, _bottom
+):
     x, y = preimage_touch
     x *= dpi_scale  # DPI scaling factor
     y *= dpi_scale
@@ -502,8 +536,7 @@ def py_click(window_manager, touch_xy, crop_settings, scale_xy):
     dpi_scale = 1.0  # windll.user32.GetDpiForWindow(hwnd) / 96.0
 
     log("click on phone screen @ {touch_xy}")
-    preimage_touch = transform_point_to_window(
-        crop_settings, scale_xy, touch_xy)
+    preimage_touch = transform_point_to_window(crop_settings, scale_xy, touch_xy)
     log("click on window client @ {preimage_touch}")
 
     # grab window reference + make active
@@ -511,7 +544,9 @@ def py_click(window_manager, touch_xy, crop_settings, scale_xy):
     hwnd = w.window_handle
 
     left, top, right, bottom = get_client_window_relative_to_screen(hwnd)
-    x, y = preimage_touch_to_screen_touch(preimage_touch, dpi_scale, left, top, right, bottom)
+    x, y = preimage_touch_to_screen_touch(
+        preimage_touch, dpi_scale, left, top, right, bottom
+    )
     log(f">>> click on computer screen {x}, {y}")
 
     pyautogui.moveTo(x, y)
@@ -531,8 +566,12 @@ def py_swipe(window_manager, from_xy, to_xy, duration, crop_settings, scale_xy):
     hwnd = w.window_handle
 
     left, top, right, bottom = get_client_window_relative_to_screen(hwnd)
-    x, y = preimage_touch_to_screen_touch(preimage_from, dpi_scale, left, top, right, bottom)
-    x2, y2 = preimage_touch_to_screen_touch(preimage_to, dpi_scale, left, top, right, bottom)
+    x, y = preimage_touch_to_screen_touch(
+        preimage_from, dpi_scale, left, top, right, bottom
+    )
+    x2, y2 = preimage_touch_to_screen_touch(
+        preimage_to, dpi_scale, left, top, right, bottom
+    )
     log(f">>> click on computer screen {x}, {y} to {x2}, {y2}")
 
     ix, iy = pyautogui.position()
@@ -544,6 +583,6 @@ def py_swipe(window_manager, from_xy, to_xy, duration, crop_settings, scale_xy):
         pyautogui.moveTo(x2, y2)
         pyautogui.mouseUp()
     else:
-        pyautogui.dragTo(x2, y2, duration, button='left')
+        pyautogui.dragTo(x2, y2, duration, button="left")
 
     pyautogui.moveTo(ix, iy)

@@ -24,12 +24,20 @@ class StreamingAndroidDevice(adb_alt_device.ADBAltDevice):
 
     Remember to call cleanup() when you're done.
     """
-    def __init__(self, capture_size, adb_flags, fps=settings.get_scrcpydevice_capture_fps(),
-                 bitrate=settings.get_scrcpydevice_capture_bitrate()):
+
+    def __init__(
+        self,
+        capture_size,
+        adb_flags,
+        fps=settings.get_scrcpydevice_capture_fps(),
+        bitrate=settings.get_scrcpydevice_capture_bitrate(),
+    ):
         assert "-s" in adb_flags
         for i, v in enumerate(adb_flags):
             if v == "-s":
-                self.image_queue, self.event_queue, self.thread = start_listener_thread(adb_flags[i+1], fps, bitrate)
+                self.image_queue, self.event_queue, self.thread = start_listener_thread(
+                    adb_flags[i + 1], fps, bitrate
+                )
         super(StreamingAndroidDevice, self).__init__(capture_size, adb_flags)
 
     def cleanup(self):
@@ -82,6 +90,15 @@ def listener_thread(serial, event_queue, fps, bitrate):
 def start_listener_thread(serial, fps, bitrate):
     image_queue = LifoQueue()
     event_queue = LifoQueue()
-    thread = threading.Thread(target=listener_thread, daemon=True, args=(serial, event_queue, fps, bitrate,))
+    thread = threading.Thread(
+        target=listener_thread,
+        daemon=True,
+        args=(
+            serial,
+            event_queue,
+            fps,
+            bitrate,
+        ),
+    )
     thread.start()
     return image_queue, event_queue, thread

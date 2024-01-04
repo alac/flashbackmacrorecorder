@@ -55,8 +55,10 @@ class SettingsManager:
                 return value_int * 60 * 60
             if units.lower() in ["day", "days"]:
                 return value_int * 24 * 60 * 60
-        raise ValueError(f"Expected setting {setting_name} to be a string of form 'XX days', 'XX hours' or 'XX' seconds"
-                         f", instead got {result}")
+        raise ValueError(
+            f"Expected setting {setting_name} to be a string of form 'XX days', 'XX hours' or 'XX' seconds"
+            f", instead got {result}"
+        )
 
     def get_fbmr_action_retry_duration(self):
         # type: () -> int
@@ -76,11 +78,15 @@ class SettingsManager:
 
     def get_debug_image_expire_time(self):
         # type: () -> int
-        return self.get_setting_as_seconds("DebugSettings.debug_image_expire_time", "7 days")
+        return self.get_setting_as_seconds(
+            "DebugSettings.debug_image_expire_time", "7 days"
+        )
 
     def get_debug_log_expire_time(self):
         # type: () -> int
-        return self.get_setting_as_seconds("DebugSettings.debug_log_expire_time", "7 days")
+        return self.get_setting_as_seconds(
+            "DebugSettings.debug_log_expire_time", "7 days"
+        )
 
 
 settings = SettingsManager(DEFAULT_SETTINGS)

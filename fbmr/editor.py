@@ -13,6 +13,7 @@ from PIL import Image
 
 class ConfigUtil:
     """Utility functions for editing the Config.json as a json rather than Config, Action, Effect"""
+
     CONFIG_NAME = "name"
     CONFIG_ACTIONS = "actions"
     CONFIG_SCREENSHOT_SIZE = "screenshot_size"
@@ -23,15 +24,19 @@ class ConfigUtil:
 
     @staticmethod
     def load_config(config_name):
-        with open(ConfigUtil.config_json_path(config_name), 'r') as in_file:
+        with open(ConfigUtil.config_json_path(config_name), "r") as in_file:
             return pyjson5.load(in_file)
 
     @staticmethod
     def save_config(config_name, config_dict):
         # use json to pretty print
         os.makedirs(ConfigUtil.config_folder_path(config_name), exist_ok=True)
-        with io.open(ConfigUtil.config_json_path(config_name), 'w', encoding='utf-8') as f:
-            f.write(json.dumps(config_dict, ensure_ascii=False, sort_keys=True, indent=2))
+        with io.open(
+            ConfigUtil.config_json_path(config_name), "w", encoding="utf-8"
+        ) as f:
+            f.write(
+                json.dumps(config_dict, ensure_ascii=False, sort_keys=True, indent=2)
+            )
 
     @staticmethod
     def config_folder_path(config_name):
@@ -48,7 +53,10 @@ class ConfigUtil:
     @staticmethod
     def config_json_timestamped_backup_path(config_name):
         timestamp = datetime.datetime.now().strftime("%Y %B %d %A %I-%M-%S%p")
-        return os.path.join(ConfigUtil.config_json_backup_folder_path(config_name), f"config_{timestamp}.json")
+        return os.path.join(
+            ConfigUtil.config_json_backup_folder_path(config_name),
+            f"config_{timestamp}.json",
+        )
 
     @staticmethod
     def write_new_json(config_name):
@@ -59,15 +67,13 @@ class ConfigUtil:
         ConfigUtil.save_config(config_name, data)
 
     @staticmethod
-    def save_json_with_backup(
-            config_name,
-            config_json_dict):
+    def save_json_with_backup(config_name, config_json_dict):
         # - copy the existing json into the backup folder
         if not os.path.isdir(ConfigUtil.config_json_backup_folder_path(config_name)):
             os.makedirs(ConfigUtil.config_json_backup_folder_path(config_name))
         copyfile(
             ConfigUtil.config_json_path(config_name),
-            ConfigUtil.config_json_timestamped_backup_path(config_name)
+            ConfigUtil.config_json_timestamped_backup_path(config_name),
         )
 
         # - update the json
@@ -118,10 +124,8 @@ def all_config_names(config_root: str = ConfigUtil.DIR_CONFIG_ROOT):
 
 
 def interactive_crop_screenshot_and_save(
-        pil_image,
-        filename_stem,
-        config_name,
-        save_original=True):
+    pil_image, filename_stem, config_name, save_original=True
+):
     """Use OpenCV to interactively crop an image and then save the result."""
 
     sc = pil_image
@@ -133,7 +137,7 @@ def interactive_crop_screenshot_and_save(
     numpy_image = cv2.cvtColor(numpy.array(sc), cv2.COLOR_RGB2BGR)
     region = cv2.selectROI(numpy_image, False)  # fromCenter=False
     x, y, w, h = region
-    numpy_image_crop = numpy_image[int(y):int(y + h), int(x):int(x + w)]
+    numpy_image_crop = numpy_image[int(y) : int(y + h), int(x) : int(x + w)]
     # Display cropped image
     cv2.imshow("Result", numpy_image_crop)
     cv2.waitKey(0)
@@ -151,22 +155,20 @@ def interactive_crop_screenshot_and_save(
 
 
 def update_action_and_save_json(
-        config_name,
-        config_json_dict,
-        action_index_to_update,
-        action_json_str):
+    config_name, config_json_dict, action_index_to_update, action_json_str
+):
     """Used when a 'config' needs either a new action inserted, or an old action updated."""
     if config_name is None:
-        print('save_json called, but no config loaded')
+        print("save_json called, but no config loaded")
         return
     if config_json_dict is None:
-        print('save_json called, but no config json loaded')
+        print("save_json called, but no config json loaded")
         return
 
     # - inject the updated ActionJson into the Config at the right place
     new_action_dict = pyjson5.loads(action_json_str)
     if action_index_to_update is None:
-        print('save_json called, but no action being edited')
+        print("save_json called, but no action being edited")
         return
 
     actions = config_json_dict[ConfigUtil.CONFIG_ACTIONS]

@@ -32,7 +32,10 @@ def all_device_constructors(allowed_types: Optional[list[str]] = None):
     configs = all_device_configs()
     constructors = {}
     for config_name in configs:
-        if allowed_types and configs[config_name].get("type", None) not in allowed_types:
+        if (
+            allowed_types
+            and configs[config_name].get("type", None) not in allowed_types
+        ):
             continue
 
         def create(config: dict):
@@ -43,15 +46,21 @@ def all_device_constructors(allowed_types: Optional[list[str]] = None):
     return constructors
 
 
-def parse_device_config(data: dict, instantiate: bool = False) -> Tuple[bool, Optional[Device]]:
+def parse_device_config(
+    data: dict, instantiate: bool = False
+) -> Tuple[bool, Optional[Device]]:
     device_type = data.get("type", None)
     if not device_type:
-        raise ValueError(f"parse_device_config: data had no device type value. Data: {data}")
+        raise ValueError(
+            f"parse_device_config: data had no device type value. Data: {data}"
+        )
     parsers = all_device_config_parsers()
     p = parsers.get(device_type, None)
     if not p:
-        raise ValueError(f"parse_device_config: data had unsupported device type value. Received: {device_type}." +
-                         f" Valid: {parsers.keys()}")
+        raise ValueError(
+            f"parse_device_config: data had unsupported device type value. Received: {device_type}."
+            + f" Valid: {parsers.keys()}"
+        )
     if p.validate(data):
         if not instantiate:
             return True, None
@@ -79,7 +88,11 @@ def all_device_configs() -> dict[str, dict]:
 
 
 def all_device_config_parsers():
-    configs = [StreamingAndroidDeviceConfig, WindowsAndroidDeviceConfig, WindowsAppDeviceConfig]
+    configs = [
+        StreamingAndroidDeviceConfig,
+        WindowsAndroidDeviceConfig,
+        WindowsAppDeviceConfig,
+    ]
     result = {}
     for c in configs:
         result[c.name()] = c
@@ -105,7 +118,9 @@ class DeviceConfig:
                 errors.append(message)
                 break
         if throw_on_error and errors:
-            raise ValueError(f"{cls.name()} couldn't be parsed because of errors: {errors}")
+            raise ValueError(
+                f"{cls.name()} couldn't be parsed because of errors: {errors}"
+            )
         elif errors:
             print("Errors found while attempting to load device:")
             for e in errors:
@@ -116,41 +131,63 @@ class DeviceConfig:
     @classmethod
     def get_validation_conditions(cls, data: dict) -> list[list[Callable, str]]:
         conditions = [
-            [lambda: type(data.get("name", None)) is str,
-             "Device name missing"],
-            [lambda: data.get("type", None) == cls.name(),
-             "Device type invalid"],
+            [lambda: type(data.get("name", None)) is str, "Device name missing"],
+            [lambda: data.get("type", None) == cls.name(), "Device type invalid"],
         ]
         fields = cls.get_expected_fields()
         if "adb_serial" in fields:
-            conditions.append([
-                lambda: type(data.get("adb_serial", None)) is str,
-                "Invalid adb_serial in config; should be an alphanumeric string or an ip address " +
-                "(e.g. 127.0.0.1:5555)"
-            ])
+            conditions.append(
+                [
+                    lambda: type(data.get("adb_serial", None)) is str,
+                    "Invalid adb_serial in config; should be an alphanumeric string or an ip address "
+                    + "(e.g. 127.0.0.1:5555)",
+                ]
+            )
         if "screenshot_size" in fields:
-            conditions.extend([
-                [lambda: type(data.get("screenshot_size", None)) is list,
-                 "Invalid format for screenshot_size"],
-                [lambda: len(data.get("screenshot_size", None)) == 2,
-                 "screenshot_size should have 2 elements"],
-                [lambda: all(isinstance(i, int) for i in data["screenshot_size"]),
-                 "screenshot_size should be a list of ints (e.g. '[ 1, 2 ]')"]]
+            conditions.extend(
+                [
+                    [
+                        lambda: type(data.get("screenshot_size", None)) is list,
+                        "Invalid format for screenshot_size",
+                    ],
+                    [
+                        lambda: len(data.get("screenshot_size", None)) == 2,
+                        "screenshot_size should have 2 elements",
+                    ],
+                    [
+                        lambda: all(
+                            isinstance(i, int) for i in data["screenshot_size"]
+                        ),
+                        "screenshot_size should be a list of ints (e.g. '[ 1, 2 ]')",
+                    ],
+                ]
             )
         if "window_crop_LTRB" in fields:
-            conditions.extend([
-                [lambda: type(data.get("window_crop_LTRB", None)) is list,
-                 "Invalid format for window_crop_LTRB"],
-                [lambda: len(data.get("window_crop_LTRB", None)) == 4,
-                 "window_crop_LTRB should have 4 elements"],
-                [lambda: all(isinstance(i, int) for i in data["window_crop_LTRB"]),
-                 "window_crop_LTRB should be a list of ints (e.g. '[ 1, 2, 3, 4 ]')"]]
+            conditions.extend(
+                [
+                    [
+                        lambda: type(data.get("window_crop_LTRB", None)) is list,
+                        "Invalid format for window_crop_LTRB",
+                    ],
+                    [
+                        lambda: len(data.get("window_crop_LTRB", None)) == 4,
+                        "window_crop_LTRB should have 4 elements",
+                    ],
+                    [
+                        lambda: all(
+                            isinstance(i, int) for i in data["window_crop_LTRB"]
+                        ),
+                        "window_crop_LTRB should be a list of ints (e.g. '[ 1, 2, 3, 4 ]')",
+                    ],
+                ]
             )
         if "window_title" in fields:
-            conditions.append([
-                lambda: type(data.get("window_title", None)) is str,
-                "Invalid window_title"
-            ])
+            conditions.append(
+                [
+                    lambda: type(data.get("window_title", None)) is str,
+                    "Invalid window_title",
+                ]
+            )
         return conditions
 
     @classmethod
@@ -162,7 +199,7 @@ class DeviceConfig:
         cls.validate(data, throw_on_error=True)
         if not file_path:
             file_path = os.path.join(DEVICE_CONFIG_FOLDER, data["name"] + ".toml")
-            with open(file_path, 'w') as f:
+            with open(file_path, "w") as f:
                 tomlkit.dump(data, f)
 
     @classmethod
@@ -197,7 +234,7 @@ class WindowsAndroidDeviceConfig(DeviceConfig):
     def initialize(cls, data: dict) -> Optional[Device]:
         cls.validate(data, throw_on_error=True)
         if not data["adb_serial"].isalnum():
-            subprocess.run(['adb', "connect", data["adb_serial"]], check=True)
+            subprocess.run(["adb", "connect", data["adb_serial"]], check=True)
 
         return WindowsAndroidDevice(
             data["screenshot_size"],
@@ -208,7 +245,14 @@ class WindowsAndroidDeviceConfig(DeviceConfig):
 
     @classmethod
     def get_expected_fields(cls) -> list[str]:
-        return ["name", "type", "adb_serial", "screenshot_size", "window_crop_LTRB", "window_title"]
+        return [
+            "name",
+            "type",
+            "adb_serial",
+            "screenshot_size",
+            "window_crop_LTRB",
+            "window_title",
+        ]
 
 
 class WindowsAppDeviceConfig(DeviceConfig):
@@ -219,11 +263,12 @@ class WindowsAppDeviceConfig(DeviceConfig):
     @classmethod
     def initialize(cls, data: dict) -> Optional[Device]:
         cls.validate(data, throw_on_error=True)
-        return WindowsAppDevice(target_size=data["screenshot_size"],
-                                crop_settings=data["window_crop_LTRB"],
-                                window_title_regexes=[data["window_title"]])
+        return WindowsAppDevice(
+            target_size=data["screenshot_size"],
+            crop_settings=data["window_crop_LTRB"],
+            window_title_regexes=[data["window_title"]],
+        )
 
     @classmethod
     def get_expected_fields(cls) -> list[str]:
         return ["name", "type", "screenshot_size", "window_crop_LTRB", "window_title"]
-

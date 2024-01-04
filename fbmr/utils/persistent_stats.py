@@ -4,11 +4,12 @@ import os
 import datetime
 from typing import Union, Any
 
+
 class JSONFile:
     @staticmethod
     def save_json(filename, data):
         # type: (str, Union[dict, list]) -> None
-        with io.open(filename, 'w', encoding='utf-8') as f:
+        with io.open(filename, "w", encoding="utf-8") as f:
             f.write(json.dumps(data, ensure_ascii=False, sort_keys=True, indent=2))
 
     @staticmethod

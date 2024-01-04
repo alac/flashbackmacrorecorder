@@ -11,7 +11,9 @@ class Condition(object):
         self.folder_path = None
         self.threshold = 0
 
-    def find_valid_rect(self, pil_image: Image, state_dict: dict, utils: dict) -> (int, Tuple[int, int, int, int]):
+    def find_valid_rect(
+        self, pil_image: Image, state_dict: dict, utils: dict
+    ) -> (int, Tuple[int, int, int, int]):
         # return a value from 0 to 100, signifying the certainty of the match
         raise NotImplementedError("Condition.make_json() not implemented")
 
@@ -56,9 +58,15 @@ ImageValidityTest: TypeAlias = Callable[[float, float], bool]
 
 
 class ImageCondition(Condition):
-    def __init__(self, image_path: str, intended_region: Optional[list[float, float, float, float]], threshold: float,
-                 weight: Optional[float] = 1.0, save_region_as: Optional[str] = False,
-                 should_pad_region: Optional[bool] = True):
+    def __init__(
+        self,
+        image_path: str,
+        intended_region: Optional[list[float, float, float, float]],
+        threshold: float,
+        weight: Optional[float] = 1.0,
+        save_region_as: Optional[str] = False,
+        should_pad_region: Optional[bool] = True,
+    ):
         super(ImageCondition, self).__init__()
         self.image_path = image_path  # strong
         # pil crop region (left, upper, right, lower)
@@ -71,11 +79,18 @@ class ImageCondition(Condition):
         self.save_region_as = save_region_as
         self.should_pad_region = should_pad_region
 
-    def find_valid_rect(self, pil_image: Image, state_dict: dict, utils: dict) -> (float, Tuple[int, int, int, int]):
+    def find_valid_rect(
+        self, pil_image: Image, state_dict: dict, utils: dict
+    ) -> (float, Tuple[int, int, int, int]):
         raise NotImplementedError("ImageCondition.find_valid_rect() not implemented")
 
-    def find_image(self, pil_image: Image, validity_test: ImageValidityTest, state_dict: dict, _utils: dict) -> \
-            (float, Tuple[int, int, int, int]):
+    def find_image(
+        self,
+        pil_image: Image,
+        validity_test: ImageValidityTest,
+        state_dict: dict,
+        _utils: dict,
+    ) -> (float, Tuple[int, int, int, int]):
         cropped_image = pil_image
         cropped_region = None
         if self.intended_region:
@@ -93,9 +108,12 @@ class ImageCondition(Condition):
             c_l, c_t, c_r, c_b = cropped_region
             updated_box = (x + c_l, y + c_t, t_width, t_height)
 
-        scaled_strength = strength * self.weight * 100 + state_dict.get("viability_adjustment", 0)
+        scaled_strength = strength * self.weight * 100 + state_dict.get(
+            "viability_adjustment", 0
+        )
         logging.getLogger("fbmr_logger").debug(
-            f'{self.__class__.__name__} match {int(scaled_strength)}/{self.threshold} for {self.image_path}')
+            f"{self.__class__.__name__} match {int(scaled_strength)}/{self.threshold} for {self.image_path}"
+        )
         if validity_test(scaled_strength, self.threshold):
             if self.save_region_as:
                 state_dict[self.save_region_as] = updated_box
@@ -107,15 +125,30 @@ class ImageCondition(Condition):
 
 
 class SubimageCondition(ImageCondition):
-    def __init__(self, image_path: str, intended_region: Optional[list[float, float, float, float]], threshold: float,
-                 weight: Optional[float] = 1.0, save_region_as: Optional[str] = False,
-                 should_pad_region: Optional[bool] = True):
-        super(SubimageCondition, self).__init__(image_path, intended_region, threshold, weight, save_region_as,
-                                                should_pad_region)
+    def __init__(
+        self,
+        image_path: str,
+        intended_region: Optional[list[float, float, float, float]],
+        threshold: float,
+        weight: Optional[float] = 1.0,
+        save_region_as: Optional[str] = False,
+        should_pad_region: Optional[bool] = True,
+    ):
+        super(SubimageCondition, self).__init__(
+            image_path,
+            intended_region,
+            threshold,
+            weight,
+            save_region_as,
+            should_pad_region,
+        )
 
-    def find_valid_rect(self, pil_image: Image, state_dict: dict, utils: dict) -> (float, Tuple[int, int, int, int]):
+    def find_valid_rect(
+        self, pil_image: Image, state_dict: dict, utils: dict
+    ) -> (float, Tuple[int, int, int, int]):
         def validity_test(strength: float, threshold: float):
             return strength > threshold
+
         return self.find_image(pil_image, validity_test, state_dict, utils)
 
     @staticmethod
@@ -129,19 +162,39 @@ class SubimageCondition(ImageCondition):
         )
 
     def make_json(self) -> dict:
-        d = {"type": "SubimageCondition", "image_path": self.image_path, "intended_region": self.intended_region,
-             "threshold": self.threshold, "weight": self.weight, "save_region_as": self.save_region_as}
+        d = {
+            "type": "SubimageCondition",
+            "image_path": self.image_path,
+            "intended_region": self.intended_region,
+            "threshold": self.threshold,
+            "weight": self.weight,
+            "save_region_as": self.save_region_as,
+        }
         return d
 
 
 class NotSubimageCondition(ImageCondition):
-    def __init__(self, image_path: str, intended_region: Optional[list[float, float, float, float]], threshold: float,
-                 weight: Optional[float] = 1.0, save_region_as: Optional[str] = False,
-                 should_pad_region: Optional[bool] = True):
-        super(NotSubimageCondition, self).__init__(image_path, intended_region, threshold, weight, save_region_as,
-                                                   should_pad_region)
+    def __init__(
+        self,
+        image_path: str,
+        intended_region: Optional[list[float, float, float, float]],
+        threshold: float,
+        weight: Optional[float] = 1.0,
+        save_region_as: Optional[str] = False,
+        should_pad_region: Optional[bool] = True,
+    ):
+        super(NotSubimageCondition, self).__init__(
+            image_path,
+            intended_region,
+            threshold,
+            weight,
+            save_region_as,
+            should_pad_region,
+        )
 
-    def find_valid_rect(self, pil_image: Image, state_dict: dict, utils: dict) -> (float, Tuple[int, int, int, int]):
+    def find_valid_rect(
+        self, pil_image: Image, state_dict: dict, utils: dict
+    ) -> (float, Tuple[int, int, int, int]):
         def validity_test(strength: float, threshold: float):
             return strength < threshold
 
@@ -161,6 +214,12 @@ class NotSubimageCondition(ImageCondition):
         )
 
     def make_json(self) -> dict:
-        d = {"type": "NotSubimageCondition", "image_path": self.image_path, "intended_region": self.intended_region,
-             "threshold": self.threshold, "weight": self.weight, "save_region_as": self.save_region_as}
+        d = {
+            "type": "NotSubimageCondition",
+            "image_path": self.image_path,
+            "intended_region": self.intended_region,
+            "threshold": self.threshold,
+            "weight": self.weight,
+            "save_region_as": self.save_region_as,
+        }
         return d

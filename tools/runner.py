@@ -22,9 +22,15 @@ class RunnerCommand:
 
 
 class RunnerStartCommand(RunnerCommand):
-    def __init__(self, next_actions: Union[str, List[str]] = None, exit_actions: List[str] = None,
-                 max_minutes: float = 0, min_action_delay: float = 0, execution_hook: ExecutionHook = None,
-                 state: Optional[dict] = None):
+    def __init__(
+        self,
+        next_actions: Union[str, List[str]] = None,
+        exit_actions: List[str] = None,
+        max_minutes: float = 0,
+        min_action_delay: float = 0,
+        execution_hook: ExecutionHook = None,
+        state: Optional[dict] = None,
+    ):
         self.next_actions = next_actions
         self.exit_actions = exit_actions
         self.max_minutes = max_minutes
@@ -35,6 +41,7 @@ class RunnerStartCommand(RunnerCommand):
 
 class RunnerInterruptCommand(RunnerCommand):
     """Dummy Command to allow for interrupts in ExecutionHook. This is a NOOP in the command consumer."""
+
     pass
 
 
@@ -47,8 +54,15 @@ class Runner:
         self.config_name = config_name
         self.device_name = device_name
 
-    def run(self, next_actions: Union[str, List[str]] = None, exit_actions: List[str] = None, max_minutes: float = 0.0,
-            min_action_delay: float = 0, execution_hook: ExecutionHook = None, state: Optional[dict] = None):
+    def run(
+        self,
+        next_actions: Union[str, List[str]] = None,
+        exit_actions: List[str] = None,
+        max_minutes: float = 0.0,
+        min_action_delay: float = 0,
+        execution_hook: ExecutionHook = None,
+        state: Optional[dict] = None,
+    ):
         debug_settings.save_detect_subimage_images = False
         c = Config("configs", self.config_name)
         e = Executor()
@@ -60,8 +74,14 @@ class Runner:
 
         with all_device_constructors()[self.device_name]() as d:
             utils = {"device": d}
-            e.execute_chain(next_actions, exit_actions, state, utils, min_action_delay=min_action_delay,
-                            max_minutes=max_minutes)
+            e.execute_chain(
+                next_actions,
+                exit_actions,
+                state,
+                utils,
+                min_action_delay=min_action_delay,
+                max_minutes=max_minutes,
+            )
 
     def start_thread(self, queue: SimpleQueue[RunnerCommand]):
         thread = threading.Thread(target=self.threaded_run, args=(queue,))
@@ -73,8 +93,14 @@ class Runner:
             command = queue.get(block=True)
             try:
                 if isinstance(command, RunnerStartCommand):
-                    self.run(command.next_actions, command.exit_actions, command.max_minutes, command.min_action_delay,
-                             command.execution_hook, command.state)
+                    self.run(
+                        command.next_actions,
+                        command.exit_actions,
+                        command.max_minutes,
+                        command.min_action_delay,
+                        command.execution_hook,
+                        command.state,
+                    )
                 elif isinstance(command, RunnerInterruptCommand):
                     pass
                 else:
@@ -178,10 +204,17 @@ class MacroLogUI:
                 if total_screenshots > 10:
                     break
                 trimmed.append(action_event_list)
-                total_screenshots += sum([len(action_events.image_paths) for action_events in action_event_list])
+                total_screenshots += sum(
+                    [
+                        len(action_events.image_paths)
+                        for action_events in action_event_list
+                    ]
+                )
             trimmed.reverse()
             self.all_action_log_events = trimmed
-            self.update_screenshots_list(self.last_search_event, self.all_action_log_events)
+            self.update_screenshots_list(
+                self.last_search_event, self.all_action_log_events
+            )
 
         root.after(200, lambda: self.update_status(root))
 
@@ -191,11 +224,17 @@ class MacroLogUI:
 
         if update_command.next_action_names:
             self.next_action_textfield.delete(0, tk.END)
-            self.next_action_textfield.insert(0, ",".join(update_command.next_action_names))
+            self.next_action_textfield.insert(
+                0, ",".join(update_command.next_action_names)
+            )
 
         if update_command.status:
             # When a status repeats, only keep the oldest and the most recent
-            if self.all_action_log_events and self.all_action_log_events[-1][0].description == update_command.status:
+            if (
+                self.all_action_log_events
+                and self.all_action_log_events[-1][0].description
+                == update_command.status
+            ):
                 new_event = ActionLogEvent(update_command.status, [])
                 new_event.repeats = 1 + self.all_action_log_events[-1][0].repeats
                 if new_event.repeats == 1:
@@ -203,7 +242,9 @@ class MacroLogUI:
                 else:
                     self.all_action_log_events[-1] = [new_event]
             else:
-                self.all_action_log_events.append([ActionLogEvent(update_command.status, [])])
+                self.all_action_log_events.append(
+                    [ActionLogEvent(update_command.status, [])]
+                )
             self.status_label.config(text=update_command.status)
 
         if update_command.last_search_event:
@@ -214,9 +255,12 @@ class MacroLogUI:
 
         return update_command
 
-    def update_screenshots_list(self, last_search_event: Optional[ActionSearchEvent],
-                                action_log_lists: List[List[ActionLogEvent]]):
-        self.action_log_scrolledtext.delete('1.0', tk.END)  # Clear current contents.
+    def update_screenshots_list(
+        self,
+        last_search_event: Optional[ActionSearchEvent],
+        action_log_lists: List[List[ActionLogEvent]],
+    ):
+        self.action_log_scrolledtext.delete("1.0", tk.END)  # Clear current contents.
         self.action_log_list_images.clear()
 
         text_field = self.action_log_scrolledtext
@@ -228,20 +272,25 @@ class MacroLogUI:
             self.action_log_list_images.append(i)  # Keep a reference.
 
         if last_search_event:
-            escaped_description = last_search_event.full_description.replace('\\', '\\\\')
+            escaped_description = last_search_event.full_description.replace(
+                "\\", "\\\\"
+            )
             text_field.insert(tk.INSERT, f"{escaped_description}\n")
             insert_image_into_textfield(last_search_event.image)
-            text_field.insert(tk.INSERT, '\n\n\n-------------------Action Log-----------------------\n')
+            text_field.insert(
+                tk.INSERT,
+                "\n\n\n-------------------Action Log-----------------------\n",
+            )
 
         for action_logs in reversed(action_log_lists):
             for al in action_logs:
-                escaped_description = al.full_description.replace('\\', '\\\\')
+                escaped_description = al.full_description.replace("\\", "\\\\")
                 text_field.insert(tk.INSERT, f"{escaped_description}\n")
 
                 for image_path in al.image_paths:
                     insert_image_into_textfield(Image.open(image_path))
-                    text_field.insert(tk.INSERT, '\n')
-            text_field.insert(tk.INSERT, '\n')
+                    text_field.insert(tk.INSERT, "\n")
+            text_field.insert(tk.INSERT, "\n")
 
 
 class RunnerUI(MacroLogUI):
@@ -268,18 +317,27 @@ class RunnerUI(MacroLogUI):
         root.grid_rowconfigure(4, weight=1)
 
         # Create the widgets
-        start_button = tk.Button(root, text="Start", command=lambda: self.forward_start_command())
-        interrupt_button = tk.Button(root, text="Interrupt", command=lambda: self.forward_interrupt_command())
-        self.status_label = tk.Label(root, text=f"Status: Loaded Config with {len(self.config.actions)} actions")
+        start_button = tk.Button(
+            root, text="Start", command=lambda: self.forward_start_command()
+        )
+        interrupt_button = tk.Button(
+            root, text="Interrupt", command=lambda: self.forward_interrupt_command()
+        )
+        self.status_label = tk.Label(
+            root, text=f"Status: Loaded Config with {len(self.config.actions)} actions"
+        )
         next_action_label = tk.Label(root, text="Next Action(s):")
         self.next_action_textfield = tk.Entry(root)
         self.next_action_textfield.insert(0, ",".join(start_actions))
-        choose_next_action_button = tk.Button(root, text="Choose Next Action",
-                                              command=lambda: self.choose_next_action())
+        choose_next_action_button = tk.Button(
+            root, text="Choose Next Action", command=lambda: self.choose_next_action()
+        )
         end_action_label = tk.Label(root, text="End Action:")
         self.end_action_textfield = tk.Entry(root)
         self.end_action_textfield.insert(0, ",".join(end_actions))
-        choose_end_action_button = tk.Button(root, text="Choose End Action", command=lambda: self.choose_end_action())
+        choose_end_action_button = tk.Button(
+            root, text="Choose End Action", command=lambda: self.choose_end_action()
+        )
         self.action_log_scrolledtext = ScrolledText(root)
 
         # Set the widget grid positions
@@ -308,8 +366,13 @@ class RunnerUI(MacroLogUI):
         self.start_thread()
         start_actions = [s for s in self.next_action_textfield.get().split(",") if s]
         end_actions = [s for s in self.end_action_textfield.get().split(",") if s]
-        command = RunnerStartCommand(next_actions=start_actions, exit_actions=end_actions, max_minutes=0,
-                                     min_action_delay=.5, execution_hook=self.execution_hook)
+        command = RunnerStartCommand(
+            next_actions=start_actions,
+            exit_actions=end_actions,
+            max_minutes=0,
+            min_action_delay=0.5,
+            execution_hook=self.execution_hook,
+        )
         self.execution_hook.runner_queue.put(command)
 
     def forward_interrupt_command(self):
@@ -327,7 +390,12 @@ class RunnerUI(MacroLogUI):
             win.destroy()
             self.popup_image_cache = []
 
-        populate_menu(win, self.popup_image_cache, get_images_and_action_names_from_config(self.config), callback)
+        populate_menu(
+            win,
+            self.popup_image_cache,
+            get_images_and_action_names_from_config(self.config),
+            callback,
+        )
 
     def choose_end_action(self):
         win = tk.Toplevel()
@@ -340,7 +408,12 @@ class RunnerUI(MacroLogUI):
             win.destroy()
             self.popup_image_cache = []
 
-        populate_menu(win, self.popup_image_cache, get_images_and_action_names_from_config(self.config), callback)
+        populate_menu(
+            win,
+            self.popup_image_cache,
+            get_images_and_action_names_from_config(self.config),
+            callback,
+        )
 
 
 def get_images_and_action_names_from_config(config: Config):
@@ -366,18 +439,23 @@ def get_images_and_action_names_from_config(config: Config):
     return result
 
 
-def populate_menu(window: tk.Toplevel, img_cache: List, paths_and_labels: List[Tuple[str, str]], callback_fn):
+def populate_menu(
+    window: tk.Toplevel,
+    img_cache: List,
+    paths_and_labels: List[Tuple[str, str]],
+    callback_fn,
+):
     # Create a frame to hold the canvas and scrollbar
     frame = tk.Frame(window)
-    frame.pack(fill='both', expand=True)
+    frame.pack(fill="both", expand=True)
 
     # Create a canvas widget
     canvas = tk.Canvas(frame)
-    canvas.pack(side='left', fill='both', expand=True)
+    canvas.pack(side="left", fill="both", expand=True)
 
     # Create a scrollbar widget
-    scrollbar = tk.Scrollbar(frame, orient='vertical', command=canvas.yview)
-    scrollbar.pack(side='right', fill='y')
+    scrollbar = tk.Scrollbar(frame, orient="vertical", command=canvas.yview)
+    scrollbar.pack(side="right", fill="y")
 
     # Connect the canvas and scrollbar
     canvas.configure(yscrollcommand=scrollbar.set)
@@ -400,21 +478,29 @@ def populate_menu(window: tk.Toplevel, img_cache: List, paths_and_labels: List[T
         img_cache.append(ImageTk.PhotoImage(image))
 
         # Create a button for the image
-        button = tk.Button(inner_frame, image=img_cache[-1], command=lambda x=label_text: callback_fn(x))
+        button = tk.Button(
+            inner_frame,
+            image=img_cache[-1],
+            command=lambda x=label_text: callback_fn(x),
+        )
         button.pack()
 
     # Create a window to hold the inner frame in the canvas
-    canvas.create_window((0, 0), window=inner_frame, anchor='nw')
+    canvas.create_window((0, 0), window=inner_frame, anchor="nw")
 
     # Set the size of the canvas window
     inner_frame.update_idletasks()
-    canvas.configure(scrollregion=canvas.bbox('all'))
+    canvas.configure(scrollregion=canvas.bbox("all"))
 
 
 class UIUpdatesCommand:
-    def __init__(self, status: str, next_action_names: Optional[List[str]] = None,
-                 last_search_event: Optional[ActionSearchEvent] = None,
-                 action_log_event: Optional[List[ActionLogEvent]] = None):
+    def __init__(
+        self,
+        status: str,
+        next_action_names: Optional[List[str]] = None,
+        last_search_event: Optional[ActionSearchEvent] = None,
+        action_log_event: Optional[List[ActionLogEvent]] = None,
+    ):
         self.status = status
         self.next_action_names = next_action_names
         self.last_search_event = last_search_event
@@ -423,7 +509,12 @@ class UIUpdatesCommand:
 
 class RunnerUIExecutionHook(ExecutionHook):
     """Expected to be called in the runner thread"""
-    def __init__(self, runner_queue: SimpleQueue[RunnerCommand], ui_update_queue: SimpleQueue[UIUpdatesCommand]):
+
+    def __init__(
+        self,
+        runner_queue: SimpleQueue[RunnerCommand],
+        ui_update_queue: SimpleQueue[UIUpdatesCommand],
+    ):
         self.runner_queue = runner_queue
         self.ui_update_queue = ui_update_queue
         self.search_state = None
@@ -435,19 +526,30 @@ class RunnerUIExecutionHook(ExecutionHook):
     def starting_chain(self, start_action_names: List[str], config: Config):
         self.check_for_queued_command()
         self.search_state = None
-        command = UIUpdatesCommand(f"Starting chain: {start_action_names}",
-                                   action_log_event=self.screenshot_data_for_next_action_names(start_action_names,
-                                                                                               config))
+        command = UIUpdatesCommand(
+            f"Starting chain: {start_action_names}",
+            action_log_event=self.screenshot_data_for_next_action_names(
+                start_action_names, config
+            ),
+        )
         self.ui_update_queue.put(command)
 
-    def chain_completed(self, start_action_names: List[str], last_action_name: str, config: Config):
+    def chain_completed(
+        self, start_action_names: List[str], last_action_name: str, config: Config
+    ):
         self.check_for_queued_command()
-        command = UIUpdatesCommand(f"Completed chain from {start_action_names} to {last_action_name}")
+        command = UIUpdatesCommand(
+            f"Completed chain from {start_action_names} to {last_action_name}"
+        )
         self.ui_update_queue.put(command)
 
-    def chain_timed_out(self, start_action_names: List[str], duration: float, config: Config):
+    def chain_timed_out(
+        self, start_action_names: List[str], duration: float, config: Config
+    ):
         self.check_for_queued_command()
-        command = UIUpdatesCommand(f"Executing chain {start_action_names} timed out after {duration}")
+        command = UIUpdatesCommand(
+            f"Executing chain {start_action_names} timed out after {duration}"
+        )
         self.ui_update_queue.put(command)
 
     def searching_for_action(self, next_action_names: List[str], config: Config):
@@ -455,10 +557,13 @@ class RunnerUIExecutionHook(ExecutionHook):
         if self.search_state and str(self.search_state) == str(next_action_names):
             return
         self.search_state = next_action_names
-        command = UIUpdatesCommand(f"Searching for action from {next_action_names}",
-                                   next_action_names=next_action_names,
-                                   action_log_event=self.screenshot_data_for_next_action_names(next_action_names,
-                                                                                               config))
+        command = UIUpdatesCommand(
+            f"Searching for action from {next_action_names}",
+            next_action_names=next_action_names,
+            action_log_event=self.screenshot_data_for_next_action_names(
+                next_action_names, config
+            ),
+        )
         self.ui_update_queue.put(command)
 
     def action_search_failed(self, pil_image: Image, config: Config):
@@ -470,24 +575,39 @@ class RunnerUIExecutionHook(ExecutionHook):
         self.check_for_queued_command()
         self.search_state = None
         search_event = ActionSearchEvent(f"Performing action {action.name}", pil_image)
-        command = UIUpdatesCommand(f"Performing action {action.name}", last_search_event=search_event)
+        command = UIUpdatesCommand(
+            f"Performing action {action.name}", last_search_event=search_event
+        )
         self.ui_update_queue.put(command)
 
     def after_action(self, action: Action, cooldown: float, config: Config):
         self.check_for_queued_command()
-        command = UIUpdatesCommand(f"Performing action {action.name} cooldown for {cooldown:.2f}")
+        command = UIUpdatesCommand(
+            f"Performing action {action.name} cooldown for {cooldown:.2f}"
+        )
         self.ui_update_queue.put(command)
 
-    def waiting_to_advance(self, action: Action, pil_image: Image, waited_time: float, retry_duration: float,
-                           retries: int, config: Config):
+    def waiting_to_advance(
+        self,
+        action: Action,
+        pil_image: Image,
+        waited_time: float,
+        retry_duration: float,
+        retries: int,
+        config: Config,
+    ):
         self.check_for_queued_command()
         search_event = ActionSearchEvent(f"Waiting to advance", pil_image)
         command = UIUpdatesCommand(
             f"Advancing from {action.name}; waited {waited_time:.2f}; retry after {retry_duration:.2f};"
-            + f" retries {retries}", last_search_event=search_event)
+            + f" retries {retries}",
+            last_search_event=search_event,
+        )
         self.ui_update_queue.put(command)
 
-    def check_condition_result(self, description: str, success: bool, pil_image: Image, config: Config):
+    def check_condition_result(
+        self, description: str, success: bool, pil_image: Image, config: Config
+    ):
         message = {
             True: "Condition Matched",
             False: "Condition Failed",
@@ -499,15 +619,20 @@ class RunnerUIExecutionHook(ExecutionHook):
         self.ui_update_queue.put(command)
 
     @staticmethod
-    def screenshot_data_for_next_action_names(next_action_names: List[str], config: Config) \
-            -> List[ActionLogEvent]:
+    def screenshot_data_for_next_action_names(
+        next_action_names: List[str], config: Config
+    ) -> List[ActionLogEvent]:
         result = list()  # type: List[ActionLogEvent]
         for action_name in next_action_names:
             action = config.get_action(action_name)
             if len(action.conditions) == 0:
                 continue
-            result.append(ActionLogEvent(f"Action: {action_name}, with {len(action.conditions)} condition(s)",
-                                         []))
+            result.append(
+                ActionLogEvent(
+                    f"Action: {action_name}, with {len(action.conditions)} condition(s)",
+                    [],
+                )
+            )
             for condition in action.conditions:
                 image_path = None
                 if isinstance(condition, ImageCondition):
@@ -519,8 +644,11 @@ class RunnerUIExecutionHook(ExecutionHook):
                         image_path = outline_fp
                     elif os.path.exists(image_fp):
                         image_path = image_fp
-                result.append(ActionLogEvent("Condition: " + json.dumps(condition.make_json()),
-                                             [image_path]))
+                result.append(
+                    ActionLogEvent(
+                        "Condition: " + json.dumps(condition.make_json()), [image_path]
+                    )
+                )
             return result
 
 
@@ -530,14 +658,35 @@ def main():
 
     # Add the required positional arguments
     parser.add_argument("config", help="the config file to use", type=str)
-    parser.add_argument("device", help="the shorthand name for the device to use; specified in devices.py", type=str)
+    parser.add_argument(
+        "device",
+        help="the shorthand name for the device to use; specified in devices.py",
+        type=str,
+    )
 
     # Add the optional arguments
-    parser.add_argument("--next_action", help="the first action to perform", type=str, default=None)
-    parser.add_argument("--end_action", help="terminate execution after this action", type=str, default=None)
-    parser.add_argument('--ui', action='store_true', default=False, help='show a UI to control and monitor the run')
-    parser.add_argument('--debug', action='store_true', default=False, help='includes the "image match" logging in the'
-                        ' console and saves images to the /debug folder.')
+    parser.add_argument(
+        "--next_action", help="the first action to perform", type=str, default=None
+    )
+    parser.add_argument(
+        "--end_action",
+        help="terminate execution after this action",
+        type=str,
+        default=None,
+    )
+    parser.add_argument(
+        "--ui",
+        action="store_true",
+        default=False,
+        help="show a UI to control and monitor the run",
+    )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        default=False,
+        help='includes the "image match" logging in the'
+        " console and saves images to the /debug folder.",
+    )
     args = parser.parse_args()
 
     if args.debug:
