@@ -353,7 +353,7 @@ def screenshot_window(
             if im.size[0] != target_width or im.size[1] != target_height:
                 scale_x = im.size[0] / float(target_width)
                 scale_y = im.size[1] / float(target_height)
-                im = im.resize(target_size, Image.ANTIALIAS)
+                im = im.resize(target_size, Image.Resampling.LANCZOS)
 
     return scale_x, scale_y, im
 

@@ -42,3 +42,5 @@ typing_extensions==4.3.0
 urllib3==1.26.11
 whichcraft==0.6.1
 xmltodict==0.13.0
+paddleocr==2.7.3
+paddlepaddle==2.6.1
