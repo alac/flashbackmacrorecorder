@@ -76,6 +76,11 @@ def find_location_cv(template_cvimg, scene_cvimg, template_name="UNKNOWN"):
     return matches[0]
 
 
+import cv2
+import logging
+import numpy as np
+
+
 def find_location_cv_multi(
     template_cvimg,
     scene_cvimg,
@@ -84,34 +89,72 @@ def find_location_cv_multi(
     max_count=10,
     template_name="UNKNOWN",
 ):
-    # Check for valid input; openCV's assertion for this isn't very clear
-    t_height, t_width, t_channels = template_cvimg.shape
-    s_height, s_width, s_channels = scene_cvimg.shape
-    assert t_height > 0, "template image shouldn't be empty"
-    assert t_width > 0, "template image shouldn't be empty"
-    assert s_height > 0, "scene image shouldn't be empty"
-    assert s_width > 0, "scene image shouldn't be empty"
+    # Get template dimensions
+    t_height, t_width = template_cvimg.shape[:2]
+    s_height, s_width = scene_cvimg.shape[:2]
 
-    result = cv2.matchTemplate(scene_cvimg, template_cvimg, cv2.TM_CCOEFF_NORMED)
-    h, w = template_cvimg.shape[:2]
+    # Basic Validations
+    assert t_height > 0 and t_width > 0, "Template image shouldn't be empty"
+    assert s_height > 0 and s_width > 0, "Scene image shouldn't be empty"
+
+    # Default settings (Standard behavior)
+    method = cv2.TM_CCOEFF_NORMED
+    search_template = template_cvimg
+    mask = None
+
+    # Check if template has an Alpha channel (4 channels)
+    if len(template_cvimg.shape) == 3 and template_cvimg.shape[2] == 4:
+        # Split the template: First 3 channels are Color, 4th is Alpha
+        search_template = template_cvimg[:, :, :3]
+        mask = template_cvimg[:, :, 3]
+
+        # We must switch methods. TM_CCOEFF_NORMED does not support masks.
+        # TM_CCORR_NORMED is the closest alternative that supports masks.
+        method = cv2.TM_CCORR_NORMED
+
+    # Ensure scene matches the template channels (usually 3 for BGR)
+    # If scene is 4-channel but template is 3-channel (after split), strip scene alpha
+    if len(scene_cvimg.shape) == 3 and scene_cvimg.shape[2] == 4:
+        scene_cvimg = scene_cvimg[:, :, :3]
+
+    # Perform the match (passing mask if it exists)
+    if mask is not None:
+        result = cv2.matchTemplate(scene_cvimg, search_template, method, mask=mask)
+    else:
+        result = cv2.matchTemplate(scene_cvimg, search_template, method)
 
     strengths_and_bounding_boxes = []
     count = 0
+
+    # Loop to find multiple occurrences
     while count < max_count:
         min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
+
+        # Check threshold
         if count >= min_count and max_val < threshold:
             break
+
         x, y = max_loc
         strengths_and_bounding_boxes.append((max_val, (x, y, t_width, t_height)))
+
         logging.getLogger("fbmr_logger").debug(
             "template_matching (str {}) at x,y ({}, {}) with size ({}, {})".format(
-                max_val, x, y, w, h
+                max_val, x, y, t_width, t_height
             )
         )
-        result[
-            max_loc[1] - h // 2 : max_loc[1] + h // 2 + 1,
-            max_loc[0] - w // 2 : max_loc[0] + w // 2 + 1,
-        ] = 0
+
+        # Mask out this match in the result matrix so we don't find it again
+        # We set it to -1 (or 0) to ensure it's below the threshold in future iterations
+        # (Both CCORR and CCOEFF range up to 1.0, so 0 or -1 is effective suppression)
+
+        # Determine erase area (clamping to image bounds to avoid errors)
+        y1 = max(0, max_loc[1] - t_height // 2)
+        y2 = min(result.shape[0], max_loc[1] + t_height // 2 + 1)
+        x1 = max(0, max_loc[0] - t_width // 2)
+        x2 = min(result.shape[1], max_loc[0] + t_width // 2 + 1)
+
+        result[y1:y2, x1:x2] = -1  # Set to lowest possible value to suppress
+
         count += 1
 
     if debug_settings.save_detect_subimage_images:
